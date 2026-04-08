@@ -1163,6 +1163,7 @@ C:/HOME/HochschuleBremerhaven2025/qt programs/DrawTools/diagramscene.h
  mdp:C:/Qt/Tools/mingw1310_64/x86_64-w64-mingw32/include/time.h
  mdp:C:/Qt/Tools/mingw1310_64/x86_64-w64-mingw32/include/vadefs.h
  mdp:C:/Qt/Tools/mingw1310_64/x86_64-w64-mingw32/include/wchar.h
+C:/HOME/HochschuleBremerhaven2025/qt programs/DrawTools/resizableequationitem.cpp
 C:/HOME/HochschuleBremerhaven2025/qt programs/DrawTools/filemanager.h
 C:/HOME/HochschuleBremerhaven2025/qt programs/DrawTools/mainwindow.h
  mmc:Q_OBJECT
@@ -1303,6 +1304,8 @@ C:/HOME/HochschuleBremerhaven2025/qt programs/DrawTools/mainwindow.h
  mdp:C:/Qt/6.11.0/mingw_64/include/QtGui/QBrush
  mdp:C:/Qt/6.11.0/mingw_64/include/QtGui/QColor
  mdp:C:/Qt/6.11.0/mingw_64/include/QtGui/QFont
+ mdp:C:/Qt/6.11.0/mingw_64/include/QtGui/QPageLayout
+ mdp:C:/Qt/6.11.0/mingw_64/include/QtGui/QPageSize
  mdp:C:/Qt/6.11.0/mingw_64/include/QtGui/QPen
  mdp:C:/Qt/6.11.0/mingw_64/include/QtGui/QPixmap
  mdp:C:/Qt/6.11.0/mingw_64/include/QtGui/QUndoStack
@@ -1318,6 +1321,8 @@ C:/HOME/HochschuleBremerhaven2025/qt programs/DrawTools/mainwindow.h
  mdp:C:/Qt/6.11.0/mingw_64/include/QtGui/qicon.h
  mdp:C:/Qt/6.11.0/mingw_64/include/QtGui/qimage.h
  mdp:C:/Qt/6.11.0/mingw_64/include/QtGui/qkeysequence.h
+ mdp:C:/Qt/6.11.0/mingw_64/include/QtGui/qpagelayout.h
+ mdp:C:/Qt/6.11.0/mingw_64/include/QtGui/qpagesize.h
  mdp:C:/Qt/6.11.0/mingw_64/include/QtGui/qpaintdevice.h
  mdp:C:/Qt/6.11.0/mingw_64/include/QtGui/qpainterpath.h
  mdp:C:/Qt/6.11.0/mingw_64/include/QtGui/qpalette.h
@@ -1950,3 +1955,6 @@ C:/HOME/HochschuleBremerhaven2025/qt programs/DrawTools/main.cpp
 C:/HOME/HochschuleBremerhaven2025/qt programs/DrawTools/mainwindow.cpp
 C:/HOME/HochschuleBremerhaven2025/qt programs/DrawTools/propertiespanel.cpp
 C:/HOME/HochschuleBremerhaven2025/qt programs/DrawTools/symbollibrary.cpp
+C:/HOME/HochschuleBremerhaven2025/qt programs/DrawTools/resizablepixmapitem.h
+C:/HOME/HochschuleBremerhaven2025/qt programs/DrawTools/resizablepixmapitem.cpp
+C:/HOME/HochschuleBremerhaven2025/qt programs/DrawTools/resizableequationitem.h

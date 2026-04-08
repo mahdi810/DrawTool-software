@@ -97,6 +97,22 @@ build CMakeFiles/DrawTools.dir/arrowitem.cpp.obj: CXX_COMPILER__DrawTools_unscan
   OBJECT_DIR = CMakeFiles\DrawTools.dir
   OBJECT_FILE_DIR = CMakeFiles\DrawTools.dir
 
+build CMakeFiles/DrawTools.dir/resizablepixmapitem.cpp.obj: CXX_COMPILER__DrawTools_unscanned_Debug C$:/HOME/HochschuleBremerhaven2025/qt$ programs/DrawTools/resizablepixmapitem.cpp || cmake_object_order_depends_target_DrawTools
+  DEFINES = -DMINGW_HAS_SECURE_API=1 -DQT_CORE_LIB -DQT_GUI_LIB -DQT_QML_DEBUG -DQT_SVG_LIB -DQT_WIDGETS_LIB -DUNICODE -DWIN32 -DWIN64 -D_ENABLE_EXTENDED_ALIGNED_STORAGE -D_UNICODE -D_WIN64
+  DEP_FILE = CMakeFiles\DrawTools.dir\resizablepixmapitem.cpp.obj.d
+  FLAGS = -g -std=gnu++17 -fdiagnostics-color=always
+  INCLUDES = -I"C:/HOME/HochschuleBremerhaven2025/qt programs/DrawTools/build/Desktop_Qt_6_11_0_MinGW_64_bit-Debug/DrawTools_autogen/include" -isystem C:/Qt/6.11.0/mingw_64/include/QtWidgets -isystem C:/Qt/6.11.0/mingw_64/include -isystem C:/Qt/6.11.0/mingw_64/include/QtCore -isystem C:/Qt/6.11.0/mingw_64/mkspecs/win32-g++ -isystem C:/Qt/6.11.0/mingw_64/include/QtGui -isystem C:/Qt/6.11.0/mingw_64/include/QtSvg
+  OBJECT_DIR = CMakeFiles\DrawTools.dir
+  OBJECT_FILE_DIR = CMakeFiles\DrawTools.dir
+
+build CMakeFiles/DrawTools.dir/resizableequationitem.cpp.obj: CXX_COMPILER__DrawTools_unscanned_Debug C$:/HOME/HochschuleBremerhaven2025/qt$ programs/DrawTools/resizableequationitem.cpp || cmake_object_order_depends_target_DrawTools
+  DEFINES = -DMINGW_HAS_SECURE_API=1 -DQT_CORE_LIB -DQT_GUI_LIB -DQT_QML_DEBUG -DQT_SVG_LIB -DQT_WIDGETS_LIB -DUNICODE -DWIN32 -DWIN64 -D_ENABLE_EXTENDED_ALIGNED_STORAGE -D_UNICODE -D_WIN64
+  DEP_FILE = CMakeFiles\DrawTools.dir\resizableequationitem.cpp.obj.d
+  FLAGS = -g -std=gnu++17 -fdiagnostics-color=always
+  INCLUDES = -I"C:/HOME/HochschuleBremerhaven2025/qt programs/DrawTools/build/Desktop_Qt_6_11_0_MinGW_64_bit-Debug/DrawTools_autogen/include" -isystem C:/Qt/6.11.0/mingw_64/include/QtWidgets -isystem C:/Qt/6.11.0/mingw_64/include -isystem C:/Qt/6.11.0/mingw_64/include/QtCore -isystem C:/Qt/6.11.0/mingw_64/mkspecs/win32-g++ -isystem C:/Qt/6.11.0/mingw_64/include/QtGui -isystem C:/Qt/6.11.0/mingw_64/include/QtSvg
+  OBJECT_DIR = CMakeFiles\DrawTools.dir
+  OBJECT_FILE_DIR = CMakeFiles\DrawTools.dir
+
 build CMakeFiles/DrawTools.dir/diagramrectitem.cpp.obj: CXX_COMPILER__DrawTools_unscanned_Debug C$:/HOME/HochschuleBremerhaven2025/qt$ programs/DrawTools/diagramrectitem.cpp || cmake_object_order_depends_target_DrawTools
   DEFINES = -DMINGW_HAS_SECURE_API=1 -DQT_CORE_LIB -DQT_GUI_LIB -DQT_QML_DEBUG -DQT_SVG_LIB -DQT_WIDGETS_LIB -DUNICODE -DWIN32 -DWIN64 -D_ENABLE_EXTENDED_ALIGNED_STORAGE -D_UNICODE -D_WIN64
   DEP_FILE = CMakeFiles\DrawTools.dir\diagramrectitem.cpp.obj.d
@@ -137,7 +153,7 @@ build CMakeFiles/DrawTools.dir/symbollibrary.cpp.obj: CXX_COMPILER__DrawTools_un
 #############################################
 # Link the executable DrawTools.exe
 
-build DrawTools.exe: CXX_EXECUTABLE_LINKER__DrawTools_Debug CMakeFiles/DrawTools.dir/DrawTools_autogen/mocs_compilation.cpp.obj CMakeFiles/DrawTools.dir/main.cpp.obj CMakeFiles/DrawTools.dir/mainwindow.cpp.obj CMakeFiles/DrawTools.dir/diagramscene.cpp.obj CMakeFiles/DrawTools.dir/diagramview.cpp.obj CMakeFiles/DrawTools.dir/arrowitem.cpp.obj CMakeFiles/DrawTools.dir/diagramrectitem.cpp.obj CMakeFiles/DrawTools.dir/filemanager.cpp.obj CMakeFiles/DrawTools.dir/propertiespanel.cpp.obj CMakeFiles/DrawTools.dir/symbollibrary.cpp.obj | C$:/Qt/6.11.0/mingw_64/lib/libQt6Widgets.a C$:/Qt/6.11.0/mingw_64/lib/libQt6Svg.a C$:/Qt/6.11.0/mingw_64/lib/libQt6Gui.a C$:/Qt/6.11.0/mingw_64/lib/libQt6Core.a || DrawTools_autogen DrawTools_autogen_timestamp_deps
+build DrawTools.exe: CXX_EXECUTABLE_LINKER__DrawTools_Debug CMakeFiles/DrawTools.dir/DrawTools_autogen/mocs_compilation.cpp.obj CMakeFiles/DrawTools.dir/main.cpp.obj CMakeFiles/DrawTools.dir/mainwindow.cpp.obj CMakeFiles/DrawTools.dir/diagramscene.cpp.obj CMakeFiles/DrawTools.dir/diagramview.cpp.obj CMakeFiles/DrawTools.dir/arrowitem.cpp.obj CMakeFiles/DrawTools.dir/resizablepixmapitem.cpp.obj CMakeFiles/DrawTools.dir/resizableequationitem.cpp.obj CMakeFiles/DrawTools.dir/diagramrectitem.cpp.obj CMakeFiles/DrawTools.dir/filemanager.cpp.obj CMakeFiles/DrawTools.dir/propertiespanel.cpp.obj CMakeFiles/DrawTools.dir/symbollibrary.cpp.obj | C$:/Qt/6.11.0/mingw_64/lib/libQt6Widgets.a C$:/Qt/6.11.0/mingw_64/lib/libQt6Svg.a C$:/Qt/6.11.0/mingw_64/lib/libQt6Gui.a C$:/Qt/6.11.0/mingw_64/lib/libQt6Core.a || DrawTools_autogen DrawTools_autogen_timestamp_deps
   FLAGS = -g
   LINK_LIBRARIES = C:/Qt/6.11.0/mingw_64/lib/libQt6Widgets.a  C:/Qt/6.11.0/mingw_64/lib/libQt6Svg.a  C:/Qt/6.11.0/mingw_64/lib/libQt6Gui.a  C:/Qt/6.11.0/mingw_64/lib/libQt6Core.a  -lmpr  -luserenv  -ld3d11  -ldxgi  -ldxguid  -ld3d12  -lkernel32 -luser32 -lgdi32 -lwinspool -lshell32 -lole32 -loleaut32 -luuid -lcomdlg32 -ladvapi32
   OBJECT_DIR = CMakeFiles\DrawTools.dir

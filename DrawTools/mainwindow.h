@@ -2,6 +2,8 @@
 #define MAINWINDOW_H
 
 #include <QMainWindow>
+#include <QPageLayout>
+#include <QPageSize>
 #include "diagramscene.h"
 
 class QMenu;
@@ -30,7 +32,9 @@ private slots:
     void openDiagram();
     void saveDiagram();
     void saveDiagramAs();
+    void pageSetup();
     void exportPng();
+    void exportPdf();
     void exportSvg();
 
     // Edit
@@ -67,6 +71,7 @@ private:
     void createMenus();
     void createToolBars();
     void createDocks();
+    void applyPageSettingsToScene();
     void setTool(DiagramScene::Mode mode);
     bool maybeSave();
 
@@ -86,7 +91,7 @@ private:
 
     // File
     QAction *newAction, *openAction, *saveAction, *saveAsAction;
-    QAction *exportPngAction, *exportSvgAction, *exitAction;
+    QAction *pageSetupAction, *exportPngAction, *exportPdfAction, *exportSvgAction, *exitAction;
 
     // Edit
     QAction *undoAction, *redoAction;
@@ -113,6 +118,10 @@ private:
 
     QActionGroup *toolGroup;
     QSpinBox     *gridSpinBox;
+
+    // Page/export settings
+    QPageSize::PageSizeId      m_pageSizeId = QPageSize::A4;
+    QPageLayout::Orientation   m_pageOrientation = QPageLayout::Portrait;
 };
 
 #endif // MAINWINDOW_H

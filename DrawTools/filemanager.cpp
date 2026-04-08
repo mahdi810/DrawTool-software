@@ -1,6 +1,8 @@
 #include "filemanager.h"
 #include "arrowitem.h"
 #include "diagramrectitem.h"
+#include "resizablepixmapitem.h"
+#include "resizableequationitem.h"
 
 #include <QFile>
 #include <QJsonDocument>
@@ -86,6 +88,22 @@ static void applyCommonFlags(QGraphicsItem *item)
 QJsonObject FileManager::itemToJson(QGraphicsItem *item)
 {
     QJsonObject obj;
+        if (auto *eq = dynamic_cast<ResizableEquationItem *>(item)) {
+            obj["type"] = "equation";
+            obj["x"] = item->pos().x();
+            obj["y"] = item->pos().y();
+            obj["z"] = item->zValue();
+            obj["scale"] = item->scale();
+            if (eq->hasSvgData()) {
+                obj["svg"] = QString::fromLatin1(eq->svgData().toBase64());
+            } else {
+                obj["pixmap"] = pixmapToBase64(eq->fallbackPixmap());
+            }
+            if (item->data(0).isValid())
+                obj["latex"] = item->data(0).toString();
+            return obj;
+        }
+
     obj["x"] = item->pos().x();
     obj["y"] = item->pos().y();
     obj["z"] = item->zValue();
@@ -175,6 +193,8 @@ QJsonObject FileManager::itemToJson(QGraphicsItem *item)
         auto *pi  = static_cast<QGraphicsPixmapItem *>(item);
         obj["type"]   = "pixmap";
         obj["pixmap"] = pixmapToBase64(pi->pixmap());
+        if (pi->data(0).isValid())
+            obj["latex"] = pi->data(0).toString();
         break;
     }
 
@@ -205,6 +225,22 @@ QGraphicsItem *FileManager::itemFromJson(const QJsonObject &o)
         ri->setBrush(brushFromJson(o["brush"].toObject()));
         ri->setCornerRadius(o["radius"].toDouble(0.0));
         item = ri;
+
+    } else if (type == "equation") {
+        ResizableEquationItem *eq = nullptr;
+        if (o.contains("svg")) {
+            const QByteArray svg = QByteArray::fromBase64(o["svg"].toString().toLatin1());
+            if (!svg.isEmpty()) eq = new ResizableEquationItem(svg);
+        }
+        if (!eq) {
+            QPixmap px;
+            if (o.contains("pixmap")) px = pixmapFromBase64(o["pixmap"].toString());
+            if (px.isNull()) return nullptr;
+            eq = new ResizableEquationItem(px);
+        }
+        if (o.contains("latex")) eq->setData(0, o["latex"].toString());
+        eq->setScale(o["scale"].toDouble(1.0));
+        item = eq;
 
     } else if (type == "ellipse") {
         QRectF r(o["rx"].toDouble(), o["ry"].toDouble(),
@@ -242,14 +278,16 @@ QGraphicsItem *FileManager::itemFromJson(const QJsonObject &o)
         f.setUnderline(o["underline"].toBool(false));
         ti->setFont(f);
         ti->setDefaultTextColor(QColor(o["color"].toString("#ff000000")));
-        ti->setTextInteractionFlags(Qt::TextEditorInteraction);
+        ti->setTextInteractionFlags(Qt::NoTextInteraction);
         if (o.contains("latex")) ti->setData(0, o["latex"].toString());
         item = ti;
 
     } else if (type == "pixmap") {
         QPixmap px = pixmapFromBase64(o["pixmap"].toString());
         if (px.isNull()) return nullptr;
-        item = new QGraphicsPixmapItem(px);
+        auto *pi = new ResizablePixmapItem(px);
+        if (o.contains("latex")) pi->setData(0, o["latex"].toString());
+        item = pi;
     }
 
     if (item) {

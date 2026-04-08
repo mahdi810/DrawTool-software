@@ -135,6 +135,8 @@ C:/HOME/HochschuleBremerhaven2025/qt\ programs/DrawTools/build/Desktop_Qt_6_11_0
   C:/Qt/6.11.0/mingw_64/include/QtGui/QBrush \
   C:/Qt/6.11.0/mingw_64/include/QtGui/QColor \
   C:/Qt/6.11.0/mingw_64/include/QtGui/QFont \
+  C:/Qt/6.11.0/mingw_64/include/QtGui/QPageLayout \
+  C:/Qt/6.11.0/mingw_64/include/QtGui/QPageSize \
   C:/Qt/6.11.0/mingw_64/include/QtGui/QPen \
   C:/Qt/6.11.0/mingw_64/include/QtGui/QPixmap \
   C:/Qt/6.11.0/mingw_64/include/QtGui/QUndoStack \
@@ -150,6 +152,8 @@ C:/HOME/HochschuleBremerhaven2025/qt\ programs/DrawTools/build/Desktop_Qt_6_11_0
   C:/Qt/6.11.0/mingw_64/include/QtGui/qicon.h \
   C:/Qt/6.11.0/mingw_64/include/QtGui/qimage.h \
   C:/Qt/6.11.0/mingw_64/include/QtGui/qkeysequence.h \
+  C:/Qt/6.11.0/mingw_64/include/QtGui/qpagelayout.h \
+  C:/Qt/6.11.0/mingw_64/include/QtGui/qpagesize.h \
   C:/Qt/6.11.0/mingw_64/include/QtGui/qpaintdevice.h \
   C:/Qt/6.11.0/mingw_64/include/QtGui/qpainterpath.h \
   C:/Qt/6.11.0/mingw_64/include/QtGui/qpalette.h \

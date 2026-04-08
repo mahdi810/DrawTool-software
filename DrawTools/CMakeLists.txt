@@ -15,6 +15,8 @@ add_executable(DrawTools
     diagramscene.h       diagramscene.cpp
     diagramview.h        diagramview.cpp
     arrowitem.h          arrowitem.cpp
+    resizablepixmapitem.h resizablepixmapitem.cpp
+    resizableequationitem.h resizableequationitem.cpp
     diagramrectitem.h    diagramrectitem.cpp
     filemanager.h        filemanager.cpp
     propertiespanel.h    propertiespanel.cpp

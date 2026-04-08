@@ -20,7 +20,9 @@ DiagramScene::DiagramScene(QObject *parent)
     : QGraphicsScene(parent)
     , m_undoStack(new QUndoStack(this))
 {
-    setSceneRect(-2000, -2000, 4000, 4000);
+    // Default page: A4 at ~96 DPI, centered at origin.
+    m_pageRect = QRectF(-397.0, -561.5, 794.0, 1123.0);
+    setSceneRect(m_pageRect.adjusted(-600, -600, 600, 600));
 
     m_pen.setColor(Qt::black);
     m_pen.setWidthF(1.5);
@@ -30,6 +32,14 @@ DiagramScene::DiagramScene(QObject *parent)
 
     m_font.setFamily("Segoe UI");
     m_font.setPointSize(11);
+}
+
+void DiagramScene::setPageRect(const QRectF &rect)
+{
+    if (!rect.isValid() || rect.isEmpty()) return;
+    m_pageRect = rect;
+    setSceneRect(m_pageRect.adjusted(-600, -600, 600, 600));
+    update();
 }
 
 void DiagramScene::setMode(Mode mode)
@@ -42,21 +52,42 @@ void DiagramScene::setMode(Mode mode)
 void DiagramScene::drawBackground(QPainter *painter, const QRectF &rect)
 {
     QGraphicsScene::drawBackground(painter, rect);
-    painter->fillRect(rect, QColor(250, 250, 250));
+
+    const QRectF page = m_pageRect.isValid() ? m_pageRect : rect;
+    painter->fillRect(rect, QColor(235, 235, 235));
+    painter->fillRect(page, Qt::white);
+
+    QPen pageBorderPen(QColor(175, 175, 175), 1.0);
+    painter->setPen(pageBorderPen);
+    painter->setBrush(Qt::NoBrush);
+    painter->drawRect(page);
 
     if (!m_gridVisible || m_gridSize <= 0) return;
 
-    QPen dotPen(QColor(210, 210, 210), 1);
-    painter->setPen(dotPen);
+    QPen minorPen(QColor(228, 228, 228), 1);
+    QPen majorPen(QColor(205, 205, 205), 1);
 
-    int left   = static_cast<int>(std::floor(rect.left()   / m_gridSize)) * m_gridSize;
-    int top    = static_cast<int>(std::floor(rect.top()    / m_gridSize)) * m_gridSize;
-    int right  = static_cast<int>(std::ceil (rect.right()  / m_gridSize)) * m_gridSize;
-    int bottom = static_cast<int>(std::ceil (rect.bottom() / m_gridSize)) * m_gridSize;
+    QRectF gridRect = rect.intersected(page);
+    if (!gridRect.isValid() || gridRect.isEmpty()) return;
 
-    for (int x = left; x <= right; x += m_gridSize)
-        for (int y = top; y <= bottom; y += m_gridSize)
-            painter->drawPoint(x, y);
+    int left   = static_cast<int>(std::floor(gridRect.left()   / m_gridSize)) * m_gridSize;
+    int top    = static_cast<int>(std::floor(gridRect.top()    / m_gridSize)) * m_gridSize;
+    int right  = static_cast<int>(std::ceil (gridRect.right()  / m_gridSize)) * m_gridSize;
+    int bottom = static_cast<int>(std::ceil (gridRect.bottom() / m_gridSize)) * m_gridSize;
+
+    const int majorStep = m_gridSize * 5;
+
+    for (int x = left; x <= right; x += m_gridSize) {
+        const bool major = (majorStep > 0) && (x % majorStep == 0);
+        painter->setPen(major ? majorPen : minorPen);
+        painter->drawLine(x, top, x, bottom);
+    }
+
+    for (int y = top; y <= bottom; y += m_gridSize) {
+        const bool major = (majorStep > 0) && (y % majorStep == 0);
+        painter->setPen(major ? majorPen : minorPen);
+        painter->drawLine(left, y, right, y);
+    }
 }
 
 QPointF DiagramScene::snapToGrid(const QPointF &pt) const
@@ -99,7 +130,7 @@ void DiagramScene::mousePressEvent(QGraphicsSceneMouseEvent *event)
         ti->setPlainText("Text");
         ti->setFont(m_font);
         ti->setDefaultTextColor(m_textColor);
-        ti->setTextInteractionFlags(Qt::TextEditorInteraction);
+        ti->setTextInteractionFlags(Qt::NoTextInteraction);
         ti->setFlag(QGraphicsItem::ItemIsSelectable);
         ti->setFlag(QGraphicsItem::ItemIsMovable);
         ti->setPos(pt);
@@ -222,6 +253,22 @@ void DiagramScene::keyPressEvent(QKeyEvent *event)
         }
         return;
     }
+
+    const auto selected = selectedItems();
+    const bool zoomInKey  = (event->key() == Qt::Key_Plus || event->key() == Qt::Key_Equal);
+    const bool zoomOutKey = (event->key() == Qt::Key_Minus || event->key() == Qt::Key_Underscore);
+    if (!selected.isEmpty() && (zoomInKey || zoomOutKey)) {
+        const qreal factor = zoomInKey ? 1.1 : 1.0 / 1.1;
+        for (auto *item : selected) {
+            item->setTransformOriginPoint(item->boundingRect().center());
+            const qreal current = item->scale();
+            const qreal next = qBound<qreal>(0.1, current * factor, 20.0);
+            item->setScale(next);
+        }
+        event->accept();
+        return;
+    }
+
     QGraphicsScene::keyPressEvent(event);
 }
 

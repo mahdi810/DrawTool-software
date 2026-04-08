@@ -4,6 +4,7 @@
 #include "propertiespanel.h"
 #include "commands.h"
 #include "filemanager.h"
+#include "resizableequationitem.h"
 
 #include <QAction>
 #include <QActionGroup>
@@ -21,10 +22,151 @@
 #include <QFileInfo>
 #include <QCloseEvent>
 #include <QSvgGenerator>
+#include <QPdfWriter>
+#include <QPageLayout>
+#include <QPageSize>
 #include <QGraphicsTextItem>
-#include <QRegularExpression>
+#include <QGraphicsPixmapItem>
 #include <QTextDocument>
+#include <QProcess>
+#include <QTemporaryDir>
+#include <QFile>
+#include <QTextStream>
+#include <QStandardPaths>
+#include <QSvgRenderer>
+#include <QDir>
+#include <QImage>
 #include <algorithm>
+
+static constexpr int kEquationRenderDpi = 1200;
+
+static void appendHtmlEscaped(QString &out, QChar ch)
+{
+    switch (ch.unicode()) {
+    case '&': out += "&amp;"; break;
+    case '<': out += "&lt;"; break;
+    case '>': out += "&gt;"; break;
+    case '"': out += "&quot;"; break;
+    case '\'': out += "&#39;"; break;
+    default: out += ch; break;
+    }
+}
+
+static QString latexCommandToHtmlEntity(const QString &cmd)
+{
+    static const std::pair<const char *, const char *> commandMap[] = {
+        {"alpha", "&alpha;"}, {"beta", "&beta;"}, {"gamma", "&gamma;"},
+        {"delta", "&delta;"}, {"epsilon", "&epsilon;"}, {"theta", "&theta;"},
+        {"lambda", "&lambda;"}, {"mu", "&mu;"}, {"pi", "&pi;"},
+        {"sigma", "&sigma;"}, {"phi", "&phi;"}, {"omega", "&omega;"},
+        {"Gamma", "&Gamma;"}, {"Delta", "&Delta;"}, {"Theta", "&Theta;"},
+        {"Lambda", "&Lambda;"}, {"Pi", "&Pi;"}, {"Sigma", "&Sigma;"},
+        {"Phi", "&Phi;"}, {"Omega", "&Omega;"},
+        {"times", "&times;"}, {"cdot", "&middot;"}, {"pm", "&plusmn;"},
+        {"neq", "&ne;"}, {"leq", "&le;"}, {"geq", "&ge;"},
+        {"approx", "&asymp;"}, {"infty", "&infin;"}, {"rightarrow", "&rarr;"},
+        {"leftarrow", "&larr;"}, {"leftrightarrow", "&harr;"},
+        {"sum", "&sum;"}, {"prod", "&prod;"}, {"int", "&int;"},
+        {"partial", "&part;"}, {"nabla", "&nabla;"}
+    };
+    for (const auto &entry : commandMap) {
+        if (cmd == QString::fromLatin1(entry.first))
+            return QString::fromLatin1(entry.second);
+    }
+    return QString();
+}
+
+static QString parseLatexCore(const QString &src, int &i, bool stopOnBrace);
+
+static QString parseLatexGroupOrAtom(const QString &src, int &i)
+{
+    if (i >= src.size()) return QString();
+
+    if (src[i] == '{') {
+        ++i;
+        QString inner = parseLatexCore(src, i, true);
+        if (i < src.size() && src[i] == '}') ++i;
+        return inner;
+    }
+
+    if (src[i] == '\\') {
+        ++i;
+        const int start = i;
+        while (i < src.size() && src[i].isLetter()) ++i;
+
+        if (i > start) {
+            const QString cmd = src.mid(start, i - start);
+
+            if (cmd == "frac") {
+                const QString num = parseLatexGroupOrAtom(src, i);
+                const QString den = parseLatexGroupOrAtom(src, i);
+                return QString("<span style=\"white-space:nowrap;\"><sup>%1</sup>&#8260;<sub>%2</sub></span>")
+                    .arg(num, den);
+            }
+            if (cmd == "sqrt") {
+                const QString rad = parseLatexGroupOrAtom(src, i);
+                return QString("&#8730;(%1)").arg(rad);
+            }
+            if (cmd == "text") {
+                const QString txt = parseLatexGroupOrAtom(src, i);
+                return QString("<span style=\"font-style:normal;\">%1</span>").arg(txt);
+            }
+            if (cmd == "left" || cmd == "right") {
+                return QString();
+            }
+            if (cmd == "," || cmd == ":") return "&thinsp;";
+            if (cmd == ";") return "&nbsp;";
+            if (cmd == "quad") return "&nbsp;&nbsp;";
+            if (cmd == "qquad") return "&nbsp;&nbsp;&nbsp;&nbsp;";
+
+            const QString entity = latexCommandToHtmlEntity(cmd);
+            if (!entity.isEmpty()) return entity;
+
+            QString fallback = "\\";
+            for (QChar c : cmd) appendHtmlEscaped(fallback, c);
+            return fallback;
+        }
+
+        // Escaped single character like \{, \}, \%, etc.
+        if (i < src.size()) {
+            QString out;
+            appendHtmlEscaped(out, src[i]);
+            ++i;
+            return out;
+        }
+        return "\\";
+    }
+
+    QString out;
+    if (src[i] == '\n') out = "<br/>";
+    else appendHtmlEscaped(out, src[i]);
+    ++i;
+    return out;
+}
+
+static QString parseLatexCore(const QString &src, int &i, bool stopOnBrace)
+{
+    QString out;
+
+    while (i < src.size()) {
+        if (stopOnBrace && src[i] == '}')
+            break;
+
+        if (src[i] == '^' || src[i] == '_') {
+            const bool sup = (src[i] == '^');
+            ++i;
+            QString atom = parseLatexGroupOrAtom(src, i);
+            if (atom.isEmpty()) atom = " ";
+            out += sup ? QString("<sup>%1</sup>").arg(atom)
+                       : QString("<sub>%1</sub>").arg(atom);
+            continue;
+        }
+
+        out += parseLatexGroupOrAtom(src, i);
+    }
+
+    return out;
+}
 
 static QFont standardEquationFont()
 {
@@ -39,80 +181,288 @@ static QFont standardEquationFont()
 static QString latexToHtml(QString latex)
 {
     latex.replace("\r\n", "\n");
-    QString out = latex.toHtmlEscaped();
-    out.replace("\n", "<br/>");
+    int i = 0;
+    return parseLatexCore(latex, i, false);
+}
 
-    const std::pair<const char *, const char *> commandMap[] = {
-        {"\\alpha", "&alpha;"}, {"\\beta", "&beta;"}, {"\\gamma", "&gamma;"},
-        {"\\delta", "&delta;"}, {"\\epsilon", "&epsilon;"}, {"\\theta", "&theta;"},
-        {"\\lambda", "&lambda;"}, {"\\mu", "&mu;"}, {"\\pi", "&pi;"},
-        {"\\sigma", "&sigma;"}, {"\\phi", "&phi;"}, {"\\omega", "&omega;"},
-        {"\\Gamma", "&Gamma;"}, {"\\Delta", "&Delta;"}, {"\\Theta", "&Theta;"},
-        {"\\Lambda", "&Lambda;"}, {"\\Pi", "&Pi;"}, {"\\Sigma", "&Sigma;"},
-        {"\\Phi", "&Phi;"}, {"\\Omega", "&Omega;"},
-        {"\\times", "&times;"}, {"\\cdot", "&middot;"}, {"\\pm", "&plusmn;"},
-        {"\\neq", "&ne;"}, {"\\leq", "&le;"}, {"\\geq", "&ge;"},
-        {"\\approx", "&asymp;"}, {"\\infty", "&infin;"}, {"\\rightarrow", "&rarr;"},
-        {"\\leftarrow", "&larr;"}, {"\\leftrightarrow", "&harr;"},
-        {"\\sum", "&sum;"}, {"\\prod", "&prod;"}, {"\\int", "&int;"},
-        {"\\partial", "&part;"}, {"\\nabla", "&nabla;"}
+static bool runProcessChecked(const QString &program,
+                              const QStringList &args,
+                              const QString &workingDir,
+                              QString &combinedOutput,
+                              int timeoutMs = 45000)
+{
+    QProcess proc;
+    proc.setProgram(program);
+    proc.setArguments(args);
+    proc.setWorkingDirectory(workingDir);
+    proc.start();
+    if (!proc.waitForStarted(5000)) {
+        combinedOutput += QString("Could not start %1\n").arg(program);
+        return false;
+    }
+    if (!proc.waitForFinished(timeoutMs)) {
+        proc.kill();
+        proc.waitForFinished(2000);
+        combinedOutput += QString("%1 timed out\n").arg(program);
+        return false;
+    }
+
+    combinedOutput += QString::fromUtf8(proc.readAllStandardOutput());
+    combinedOutput += QString::fromUtf8(proc.readAllStandardError());
+    return proc.exitStatus() == QProcess::NormalExit && proc.exitCode() == 0;
+}
+
+static QString findToolExecutable(const QString &toolName)
+{
+    QString exe = QStandardPaths::findExecutable(toolName);
+    if (!exe.isEmpty()) return exe;
+
+#ifdef Q_OS_WIN
+    QString candidate = toolName;
+    if (!candidate.endsWith(".exe", Qt::CaseInsensitive))
+        candidate += ".exe";
+
+    QStringList roots;
+    roots << qEnvironmentVariable("LOCALAPPDATA")
+          << qEnvironmentVariable("PROGRAMFILES")
+          << qEnvironmentVariable("PROGRAMFILES(X86)");
+
+    const QStringList suffixes = {
+        "Programs/MiKTeX/miktex/bin/x64",
+        "MiKTeX/miktex/bin/x64",
+        "TeXLive/bin/win32"
     };
-    for (const auto &entry : commandMap)
-        out.replace(QString::fromLatin1(entry.first), QString::fromLatin1(entry.second));
 
-    // Common LaTeX spacing and delimiter helpers.
-    out.replace("\\left", "");
-    out.replace("\\right", "");
-    out.replace("\\,", "&thinsp;");
-    out.replace("\\:", "&thinsp;");
-    out.replace("\\;", "&nbsp;");
-    out.replace("\\quad", "&nbsp;&nbsp;");
-    out.replace("\\qquad", "&nbsp;&nbsp;&nbsp;&nbsp;");
+    for (const QString &root : roots) {
+        if (root.isEmpty()) continue;
+        for (const QString &suffix : suffixes) {
+            const QString full = QDir::fromNativeSeparators(root + "/" + suffix + "/" + candidate);
+            if (QFile::exists(full)) return full;
+        }
+    }
+#endif
 
-    const QRegularExpression textRe(R"(\\text\{([^{}]+)\})");
-    while (true) {
-        const auto m = textRe.match(out);
-        if (!m.hasMatch()) break;
-        const QString repl = QString("<span style=\"font-style:normal;\">%1</span>").arg(m.captured(1));
-        out.replace(m.capturedStart(), m.capturedLength(), repl);
+    return QString();
+}
+
+static QPixmap trimTransparentBorders(const QPixmap &pix)
+{
+    if (pix.isNull()) return pix;
+    QImage img = pix.toImage().convertToFormat(QImage::Format_ARGB32);
+
+    int minX = img.width(), minY = img.height();
+    int maxX = -1, maxY = -1;
+
+    for (int y = 0; y < img.height(); ++y) {
+        const QRgb *line = reinterpret_cast<const QRgb *>(img.constScanLine(y));
+        for (int x = 0; x < img.width(); ++x) {
+            if (qAlpha(line[x]) > 0) {
+                minX = qMin(minX, x);
+                minY = qMin(minY, y);
+                maxX = qMax(maxX, x);
+                maxY = qMax(maxY, y);
+            }
+        }
     }
 
-    const QRegularExpression fracRe(R"(\\frac\{([^{}]+)\}\{([^{}]+)\})");
-    while (true) {
-        const auto m = fracRe.match(out);
-        if (!m.hasMatch()) break;
-        const QString repl = QString("<span style=\"white-space:nowrap;\"><sup>%1</sup>&#8260;<sub>%2</sub></span>")
-                                 .arg(m.captured(1), m.captured(2));
-        out.replace(m.capturedStart(), m.capturedLength(), repl);
+    if (maxX < minX || maxY < minY) return pix;
+    const int pad = 3;
+    QRect r(QPoint(qMax(0, minX - pad), qMax(0, minY - pad)),
+            QPoint(qMin(img.width() - 1, maxX + pad), qMin(img.height() - 1, maxY + pad)));
+    return QPixmap::fromImage(img.copy(r));
+}
+
+static QPixmap optimizeEquationPixmapForDisplay(const QPixmap &pix, qreal sourceDpi)
+{
+    if (pix.isNull()) return pix;
+    Q_UNUSED(sourceDpi)
+    // Keep full source resolution for quality.
+    return pix;
+}
+
+static qreal equationInitialDisplayScale(qreal sourceDpi)
+{
+    Q_UNUSED(sourceDpi)
+    // Keep inserted equation at native display scale for legibility.
+    return 1.0;
+}
+
+static bool renderLatexWithEngine(const QString &latex, QPixmap &pixmap, QByteArray &svgData, QString &errorText)
+{
+    QTemporaryDir tmp;
+    if (!tmp.isValid()) {
+        errorText = "Could not create temporary directory for LaTeX compilation.";
+        return false;
     }
 
-    const QRegularExpression sqrtRe(R"(\\sqrt\{([^{}]+)\})");
-    while (true) {
-        const auto m = sqrtRe.match(out);
-        if (!m.hasMatch()) break;
-        const QString repl = QString("&#8730;(%1)").arg(m.captured(1));
-        out.replace(m.capturedStart(), m.capturedLength(), repl);
+    const QString texPath = tmp.filePath("equation.tex");
+    QFile texFile(texPath);
+    if (!texFile.open(QIODevice::WriteOnly | QIODevice::Text)) {
+        errorText = "Could not write temporary LaTeX file.";
+        return false;
     }
 
-    const QRegularExpression supRe(R"(\^\{([^{}]+)\}|\^(&[A-Za-z0-9#]+;|[A-Za-z0-9+\-*/=()]))");
-    while (true) {
-        const auto m = supRe.match(out);
-        if (!m.hasMatch()) break;
-        const QString cap = m.captured(1).isEmpty() ? m.captured(2) : m.captured(1);
-        out.replace(m.capturedStart(), m.capturedLength(), QString("<sup>%1</sup>").arg(cap));
+    const QString trimmedLatex = latex.trimmed();
+    const bool isFullDocument = trimmedLatex.contains("\\documentclass") ||
+                                trimmedLatex.contains("\\begin{document}");
+    const bool hasOwnMathEnv = trimmedLatex.contains("\\begin{") ||
+                               trimmedLatex.contains("\\[") ||
+                               trimmedLatex.contains("\\(") ||
+                               trimmedLatex.contains("$$") ||
+                               (trimmedLatex.startsWith('$') && trimmedLatex.endsWith('$'));
+
+    auto writeTex = [&](bool minimalTemplate) {
+        if (texFile.isOpen()) texFile.close();
+        if (!texFile.open(QIODevice::WriteOnly | QIODevice::Text | QIODevice::Truncate)) {
+            return false;
+        }
+        QTextStream ts(&texFile);
+        ts.setEncoding(QStringConverter::Utf8);
+        if (isFullDocument) {
+            ts << trimmedLatex << "\n";
+            texFile.close();
+            return true;
+        }
+        if (minimalTemplate) {
+            ts << "\\documentclass[12pt]{article}\n"
+                  "\\pagestyle{empty}\n"
+                  "\\begin{document}\n"
+               << (hasOwnMathEnv ? trimmedLatex : QString("$%1$").arg(latex)) << "\n"
+                  "\\end{document}\n";
+        } else {
+            ts << "\\documentclass[12pt]{article}\n"
+                  "\\usepackage{amsmath,amssymb}\n"
+                  "\\pagestyle{empty}\n"
+                  "\\begin{document}\n"
+               << (hasOwnMathEnv
+                       ? trimmedLatex + "\n"
+                       : QString("\\[\n%1\n\\]\n").arg(latex))
+                    <<
+                  "\\end{document}\n";
+        }
+        texFile.close();
+        return true;
+    };
+
+    if (!writeTex(false)) {
+        errorText = "Could not write temporary LaTeX file.";
+        return false;
     }
 
-    const QRegularExpression subRe(R"(_\{([^{}]+)\}|_(&[A-Za-z0-9#]+;|[A-Za-z0-9+\-*/=()]))");
-    while (true) {
-        const auto m = subRe.match(out);
-        if (!m.hasMatch()) break;
-        const QString cap = m.captured(1).isEmpty() ? m.captured(2) : m.captured(1);
-        out.replace(m.capturedStart(), m.capturedLength(), QString("<sub>%1</sub>").arg(cap));
+    const QStringList engines = {"xelatex", "pdflatex"};
+    QString compilerLog;
+    QString usedEngine;
+    bool anyEngineFound = false;
+    const QString pdfPath = tmp.filePath("equation.pdf");
+
+    for (int pass = 0; pass < 2 && usedEngine.isEmpty(); ++pass) {
+        const bool minimalTemplate = (pass == 1);
+        if (minimalTemplate && !writeTex(true)) {
+            errorText = "Could not rewrite temporary LaTeX file.";
+            return false;
+        }
+
+        for (const QString &engine : engines) {
+            const QString engineExe = findToolExecutable(engine);
+            if (engineExe.isEmpty())
+                continue;
+            anyEngineFound = true;
+
+            bool ok = false;
+            for (int attempt = 0; attempt < 2; ++attempt) {
+                QFile::remove(pdfPath);
+                ok = runProcessChecked(
+                    engineExe,
+                    {"-interaction=nonstopmode", "-halt-on-error", "-file-line-error", "-enable-installer", "-no-shell-escape", "equation.tex"},
+                    tmp.path(),
+                    compilerLog);
+                if (ok && QFile::exists(pdfPath)) break;
+            }
+
+            if (ok && QFile::exists(pdfPath)) {
+                usedEngine = engine;
+                break;
+            }
+        }
     }
 
-    out.replace("\\{", "&#123;");
-    out.replace("\\}", "&#125;");
-    return out;
+    if (usedEngine.isEmpty()) {
+        if (!anyEngineFound) {
+            errorText = "TeX compiler not found.\n"
+                        "Install MiKTeX or TeX Live and ensure xelatex/pdflatex is on PATH.\n"
+                        "Then restart the app/Qt Creator so PATH changes are picked up.";
+        } else {
+            errorText = "TeX compiler found but equation compilation failed.\n"
+                        "If using MiKTeX, enable: Settings > General > Install missing packages = Always.\n"
+                        "(The app already requests -enable-installer.)\n\n"
+                        "Compiler output:\n" + compilerLog;
+        }
+        return false;
+    }
+
+    QString convertLog;
+    const QString pngBase = tmp.filePath("equation");
+    const QString pngPath = tmp.filePath("equation.png");
+    const QString svgPath = tmp.filePath("equation.svg");
+    const QString croppedPdfPath = tmp.filePath("equation-crop.pdf");
+
+    const QString pdfcropExe    = findToolExecutable("pdfcrop");
+    const QString pdftocairoExe = findToolExecutable("pdftocairo");
+    const QString pdftoppmExe   = findToolExecutable("pdftoppm");
+    const QString magickExe     = findToolExecutable("magick");
+    const QString dvisvgmExe    = findToolExecutable("dvisvgm");
+
+    QString pdfForConversion = pdfPath;
+    if (!pdfcropExe.isEmpty()) {
+        runProcessChecked(pdfcropExe,
+                          {"--margins", "2", "equation.pdf", "equation-crop.pdf"},
+                          tmp.path(),
+                          convertLog,
+                          30000);
+        if (QFile::exists(croppedPdfPath)) {
+            pdfForConversion = croppedPdfPath;
+        }
+    }
+
+    if (!dvisvgmExe.isEmpty()) {
+        runProcessChecked(dvisvgmExe,
+                          {"--pdf", "--page=1", "--bbox=min", "--exact-bbox", "--no-fonts", "-o", svgPath, pdfForConversion},
+                          tmp.path(),
+                          convertLog,
+                          30000);
+        if (QFile::exists(svgPath)) {
+            QFile sf(svgPath);
+            if (sf.open(QIODevice::ReadOnly)) {
+                svgData = sf.readAll();
+                sf.close();
+            }
+            if (!svgData.isEmpty()) return true;
+        }
+    }
+
+    if (!pdftocairoExe.isEmpty()) {
+        runProcessChecked(pdftocairoExe, {"-singlefile", "-png", "-transp", "-r", QString::number(kEquationRenderDpi), pdfForConversion, pngBase}, tmp.path(), convertLog, 30000);
+    }
+    if (!QFile::exists(pngPath) && !pdftoppmExe.isEmpty()) {
+        runProcessChecked(pdftoppmExe, {"-singlefile", "-png", "-r", QString::number(kEquationRenderDpi), pdfForConversion, pngBase}, tmp.path(), convertLog, 30000);
+    }
+    if (!QFile::exists(pngPath) && !magickExe.isEmpty()) {
+        runProcessChecked(magickExe, {"-density", QString::number(kEquationRenderDpi), "-background", "none", pdfForConversion + "[0]", pngPath}, tmp.path(), convertLog, 30000);
+    }
+
+    if (QFile::exists(pngPath)) {
+        if (pixmap.load(pngPath) && !pixmap.isNull()) {
+            pixmap = trimTransparentBorders(pixmap);
+            pixmap = optimizeEquationPixmapForDisplay(pixmap, kEquationRenderDpi);
+            return true;
+        }
+    }
+
+    errorText = "Equation compiled with " + usedEngine +
+                " but no PDF converter was found.\n"
+                "Install one of: pdftocairo, pdftoppm (Poppler), ImageMagick, or dvisvgm.\n\n"
+                "Converter output:\n" + convertLog;
+    return false;
 }
 
 MainWindow::MainWindow(QWidget *parent)
@@ -127,6 +477,8 @@ MainWindow::MainWindow(QWidget *parent)
     createMenus();
     createToolBars();
     createDocks();
+    applyPageSettingsToScene();
+    view->centerOn(scene->pageRect().center());
 
     m_coordLabel = new QLabel("  x: 0  y: 0  ");
     m_zoomLabel  = new QLabel("  100%  ");
@@ -169,6 +521,20 @@ bool MainWindow::maybeSave()
     return false;
 }
 
+void MainWindow::applyPageSettingsToScene()
+{
+    QPageSize pageSize(m_pageSizeId);
+    QSizeF mm = pageSize.size(QPageSize::Millimeter);
+    if (m_pageOrientation == QPageLayout::Landscape) {
+        mm = QSizeF(mm.height(), mm.width());
+    }
+
+    constexpr qreal pxPerMm = 96.0 / 25.4;
+    const qreal w = mm.width() * pxPerMm;
+    const qreal h = mm.height() * pxPerMm;
+    scene->setPageRect(QRectF(-w / 2.0, -h / 2.0, w, h));
+}
+
 void MainWindow::setTool(DiagramScene::Mode mode)
 {
     scene->setMode(mode);
@@ -184,7 +550,9 @@ void MainWindow::createActions()
     openAction      = new QAction("&Open...",       this); openAction->setShortcut(QKeySequence::Open);
     saveAction      = new QAction("&Save",          this); saveAction->setShortcut(QKeySequence::Save);
     saveAsAction    = new QAction("Save &As...",    this); saveAsAction->setShortcut(QKeySequence::SaveAs);
+    pageSetupAction = new QAction("Page Set&up...", this);
     exportPngAction = new QAction("Export &PNG...", this);
+    exportPdfAction = new QAction("Export &PDF...", this);
     exportSvgAction = new QAction("Export &SVG...", this);
     exitAction      = new QAction("E&xit",          this); exitAction->setShortcut(QKeySequence::Quit);
 
@@ -192,7 +560,9 @@ void MainWindow::createActions()
     connect(openAction,      &QAction::triggered, this, &MainWindow::openDiagram);
     connect(saveAction,      &QAction::triggered, this, &MainWindow::saveDiagram);
     connect(saveAsAction,    &QAction::triggered, this, &MainWindow::saveDiagramAs);
+    connect(pageSetupAction, &QAction::triggered, this, &MainWindow::pageSetup);
     connect(exportPngAction, &QAction::triggered, this, &MainWindow::exportPng);
+    connect(exportPdfAction, &QAction::triggered, this, &MainWindow::exportPdf);
     connect(exportSvgAction, &QAction::triggered, this, &MainWindow::exportSvg);
     connect(exitAction,      &QAction::triggered, this, &QWidget::close);
 
@@ -251,6 +621,7 @@ void MainWindow::createActions()
     zoomOutAction   = new QAction("Zoom &Out",   this); zoomOutAction->setShortcut(Qt::CTRL | Qt::Key_Minus);
     resetZoomAction = new QAction("&Reset Zoom", this); resetZoomAction->setShortcut(Qt::CTRL | Qt::Key_0);
     toggleGridAction= new QAction("Show &Grid",  this); toggleGridAction->setCheckable(true); toggleGridAction->setChecked(true);
+    toggleGridAction->setShortcut(QKeySequence(Qt::CTRL | Qt::ALT | Qt::Key_G));
 
     connect(zoomInAction,    &QAction::triggered, this, [this](){ view->scale(1.2,1.2); updateStatusBar(); });
     connect(zoomOutAction,   &QAction::triggered, this, [this](){ view->scale(1.0/1.2,1.0/1.2); updateStatusBar(); });
@@ -286,7 +657,9 @@ void MainWindow::createMenus()
     fileMenu->addAction(newAction); fileMenu->addAction(openAction);
     fileMenu->addAction(saveAction); fileMenu->addAction(saveAsAction);
     fileMenu->addSeparator();
-    fileMenu->addAction(exportPngAction); fileMenu->addAction(exportSvgAction);
+    fileMenu->addAction(pageSetupAction);
+    fileMenu->addSeparator();
+    fileMenu->addAction(exportPngAction); fileMenu->addAction(exportPdfAction); fileMenu->addAction(exportSvgAction);
     fileMenu->addSeparator(); fileMenu->addAction(exitAction);
 
     editMenu = menuBar()->addMenu("&Edit");
@@ -340,6 +713,7 @@ void MainWindow::createToolBars()
     connect(gridSpinBox, QOverload<int>::of(&QSpinBox::valueChanged),
             this, &MainWindow::onGridSizeChanged);
     tb->addWidget(gridSpinBox);
+        tb->addAction(toggleGridAction);
 
     QToolBar *ab = addToolBar("Arrange"); ab->setMovable(false);
     ab->addAction(bringToFrontAction); ab->addAction(bringForwardAction);
@@ -405,6 +779,59 @@ void MainWindow::saveDiagramAs()
     setWindowTitle("DrawTools — " + QFileInfo(path).fileName());
 }
 
+void MainWindow::pageSetup()
+{
+    const QStringList sizeNames = {"A5", "A4", "A3", "Letter", "Legal"};
+    QString currentSize = "A4";
+    switch (m_pageSizeId) {
+    case QPageSize::A5: currentSize = "A5"; break;
+    case QPageSize::A3: currentSize = "A3"; break;
+    case QPageSize::Letter: currentSize = "Letter"; break;
+    case QPageSize::Legal: currentSize = "Legal"; break;
+    default: currentSize = "A4"; break;
+    }
+
+    bool ok = false;
+    const QString chosenSize = QInputDialog::getItem(this,
+                                                     "Page Setup",
+                                                     "Page size:",
+                                                     sizeNames,
+                                                     sizeNames.indexOf(currentSize),
+                                                     false,
+                                                     &ok);
+    if (!ok || chosenSize.isEmpty()) return;
+
+    const QStringList orientations = {"Portrait", "Landscape"};
+    const QString currentOrientation = (m_pageOrientation == QPageLayout::Landscape)
+                                       ? "Landscape" : "Portrait";
+    const QString chosenOrientation = QInputDialog::getItem(this,
+                                                            "Page Setup",
+                                                            "Orientation:",
+                                                            orientations,
+                                                            orientations.indexOf(currentOrientation),
+                                                            false,
+                                                            &ok);
+    if (!ok || chosenOrientation.isEmpty()) return;
+
+    if (chosenSize == "A5") m_pageSizeId = QPageSize::A5;
+    else if (chosenSize == "A3") m_pageSizeId = QPageSize::A3;
+    else if (chosenSize == "Letter") m_pageSizeId = QPageSize::Letter;
+    else if (chosenSize == "Legal") m_pageSizeId = QPageSize::Legal;
+    else m_pageSizeId = QPageSize::A4;
+
+    m_pageOrientation = (chosenOrientation == "Landscape")
+                        ? QPageLayout::Landscape
+                        : QPageLayout::Portrait;
+
+    applyPageSettingsToScene();
+    view->centerOn(scene->pageRect().center());
+
+    statusBar()->showMessage(QString("Page set to %1 (%2)")
+                                 .arg(chosenSize)
+                                 .arg(chosenOrientation),
+                             3000);
+}
+
 void MainWindow::exportPng()
 {
     QString path = QFileDialog::getSaveFileName(this,"Export PNG",{},"PNG (*.png)");
@@ -421,6 +848,45 @@ void MainWindow::exportPng()
     scene->render(&p, QRectF(), bounds); p.end();
     if (!img.save(path))
         QMessageBox::critical(this,"Export Failed","Could not save:\n"+path);
+}
+
+void MainWindow::exportPdf()
+{
+    QString path = QFileDialog::getSaveFileName(this, "Export PDF", {}, "PDF (*.pdf)");
+    if (path.isEmpty()) return;
+    if (!path.endsWith(".pdf", Qt::CaseInsensitive)) path += ".pdf";
+
+    const QRectF pageSource = scene->pageRect();
+    if (!pageSource.isValid() || pageSource.isEmpty()) {
+        QMessageBox::critical(this, "Export PDF", "Invalid page bounds.");
+        return;
+    }
+
+    QPdfWriter writer(path);
+    writer.setResolution(300);
+    writer.setPageSize(QPageSize(m_pageSizeId));
+    writer.setPageOrientation(m_pageOrientation);
+    writer.setPageMargins(QMarginsF(10, 10, 10, 10), QPageLayout::Millimeter);
+
+    QPainter painter(&writer);
+    painter.setRenderHint(QPainter::Antialiasing, true);
+    painter.setRenderHint(QPainter::TextAntialiasing, true);
+    painter.setRenderHint(QPainter::SmoothPixmapTransform, true);
+
+    const QRect pageRect = writer.pageLayout().paintRectPixels(writer.resolution());
+    if (pageRect.width() <= 0 || pageRect.height() <= 0) {
+        QMessageBox::critical(this, "Export PDF", "Invalid page layout.");
+        return;
+    }
+
+    // WYSIWYG export: map the configured scene page directly to the PDF paint rect.
+    scene->render(&painter,
+                  QRectF(pageRect),
+                  pageSource,
+                  Qt::KeepAspectRatio);
+    painter.end();
+
+    statusBar()->showMessage("Exported PDF: " + QFileInfo(path).fileName(), 3000);
 }
 
 void MainWindow::exportSvg()
@@ -528,32 +994,64 @@ void MainWindow::insertEquation()
         &ok);
     if (!ok || latex.trimmed().isEmpty()) return;
 
-    const QString html = latexToHtml(latex);
-    if (html.trimmed().isEmpty()) {
-        QMessageBox::warning(this, "Insert Equation", "Could not parse equation input.");
+    QPixmap rendered;
+    QByteArray svgData;
+    QString renderError;
+    if (!renderLatexWithEngine(latex, rendered, svgData, renderError)) {
+        const QString fallbackHtml = latexToHtml(latex);
+        if (fallbackHtml.trimmed().isEmpty()) {
+            QMessageBox::critical(this, "Insert Equation", renderError);
+            return;
+        }
+        const auto btn = QMessageBox::warning(
+            this,
+            "LaTeX Compiler Not Available",
+            renderError + "\n\nUsing simplified renderer as fallback.",
+            QMessageBox::Ok | QMessageBox::Cancel,
+            QMessageBox::Ok);
+        if (btn == QMessageBox::Cancel) return;
+
+        auto *ti = new QGraphicsTextItem;
+        const QFont eqFont = standardEquationFont();
+        const QString styledHtml = QString(
+                                       "<div style=\"font-family:'%1'; font-size:%2pt; font-style:italic;\">%3</div>")
+                                       .arg(eqFont.family())
+                                       .arg(eqFont.pointSize())
+                                       .arg(fallbackHtml);
+        ti->document()->setDefaultFont(eqFont);
+        ti->setHtml(styledHtml);
+        ti->setFont(eqFont);
+        ti->setDefaultTextColor(scene->currentTextColor());
+        ti->setTextInteractionFlags(Qt::NoTextInteraction);
+        ti->setFlag(QGraphicsItem::ItemIsSelectable);
+        ti->setFlag(QGraphicsItem::ItemIsMovable);
+        ti->setData(0, latex);
+        ti->setPos(view->mapToScene(view->viewport()->rect().center()));
+
+        scene->clearSelection();
+        scene->undoStack()->push(new AddItemCommand(scene, ti));
+        ti->setSelected(true);
         return;
     }
 
-    auto *ti = new QGraphicsTextItem;
-    const QFont eqFont = standardEquationFont();
-    const QString styledHtml = QString(
-                                   "<div style=\"font-family:'%1'; font-size:%2pt; font-style:italic;\">%3</div>")
-                                   .arg(eqFont.family())
-                                   .arg(eqFont.pointSize())
-                                   .arg(html);
-    ti->document()->setDefaultFont(eqFont);
-    ti->setHtml(styledHtml);
-    ti->setFont(eqFont);
-    ti->setDefaultTextColor(scene->currentTextColor());
-    ti->setTextInteractionFlags(Qt::TextEditorInteraction);
-    ti->setFlag(QGraphicsItem::ItemIsSelectable);
-    ti->setFlag(QGraphicsItem::ItemIsMovable);
-    ti->setData(0, latex);
-    ti->setPos(view->mapToScene(view->viewport()->rect().center()));
+    QGraphicsItem *eqItem = nullptr;
+    if (!svgData.isEmpty()) {
+        auto *si = new ResizableEquationItem(svgData);
+        si->setData(0, latex);
+        eqItem = si;
+    } else {
+        auto *pi = new ResizableEquationItem(rendered);
+        pi->setData(0, latex);
+        eqItem = pi;
+    }
+
+    const QRectF br = eqItem->boundingRect();
+    eqItem->setPos(view->mapToScene(view->viewport()->rect().center())
+                   - QPointF(br.width() / 2.0, br.height() / 2.0));
 
     scene->clearSelection();
-    scene->undoStack()->push(new AddItemCommand(scene, ti));
-    ti->setSelected(true);
+    scene->undoStack()->push(new AddItemCommand(scene, eqItem));
+    eqItem->setSelected(true);
 }
 
 void MainWindow::onSymbolActivated(int index)

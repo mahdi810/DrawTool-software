@@ -1,85 +1,37 @@
 # ninja log v6
-756	4297	7973475129008715	CMakeFiles/DrawTools.dir/propertiespanel.cpp.obj	2b78a7b9ac67f895
-770	3835	7973475129138717	CMakeFiles/DrawTools.dir/diagramrectitem.cpp.obj	5b10071469a1985b
-761	4040	7973475129048727	CMakeFiles/DrawTools.dir/filemanager.cpp.obj	f231f052e69c6d4d
-29	731	7973475128031196	DrawTools_autogen/timestamp	20ddef7da9a4d3c6
-29	731	7973475128031196	DrawTools_autogen/mocs_compilation.cpp	20ddef7da9a4d3c6
-2959	3390	7973463959215351	DrawTools.exe	beebf7ae503acd15
-29	731	7973475128031196	C:/HOME/HochschuleBremerhaven2025/qt programs/DrawTools/build/Desktop_Qt_6_11_0_MinGW_64_bit-Debug/DrawTools_autogen/timestamp	20ddef7da9a4d3c6
-29	731	7973475128031196	C:/HOME/HochschuleBremerhaven2025/qt programs/DrawTools/build/Desktop_Qt_6_11_0_MinGW_64_bit-Debug/DrawTools_autogen/mocs_compilation.cpp	20ddef7da9a4d3c6
-765	3839	7973475129088720	CMakeFiles/DrawTools.dir/arrowitem.cpp.obj	4aedd55647de46a4
-749	3830	7973475128928711	CMakeFiles/DrawTools.dir/diagramview.cpp.obj	9f793c968d12b10e
-732	4238	7973475128757214	CMakeFiles/DrawTools.dir/DrawTools_autogen/mocs_compilation.cpp.obj	6de7ea2d2f81cc2f
-736	3767	7973475128807211	CMakeFiles/DrawTools.dir/main.cpp.obj	dfd9d16cf5a0a195
-560	2959	7973463935230434	CMakeFiles/DrawTools.dir/mainwindow.cpp.obj	d0e0bc22bf668218
-745	4076	7973475128883472	CMakeFiles/DrawTools.dir/diagramscene.cpp.obj	78328e2c954168f3
-752	3895	7973475128968785	CMakeFiles/DrawTools.dir/symbollibrary.cpp.obj	2e0003c6ef6f1fef
-48	787	7973482842937209	DrawTools_autogen/timestamp	20ddef7da9a4d3c6
-48	787	7973482842937209	DrawTools_autogen/mocs_compilation.cpp	20ddef7da9a4d3c6
-48	787	7973482842937209	C:/HOME/HochschuleBremerhaven2025/qt programs/DrawTools/build/Desktop_Qt_6_11_0_MinGW_64_bit-Debug/DrawTools_autogen/timestamp	20ddef7da9a4d3c6
-48	787	7973482842937209	C:/HOME/HochschuleBremerhaven2025/qt programs/DrawTools/build/Desktop_Qt_6_11_0_MinGW_64_bit-Debug/DrawTools_autogen/mocs_compilation.cpp	20ddef7da9a4d3c6
-792	3412	7973482843622249	CMakeFiles/DrawTools.dir/main.cpp.obj	91472577d49e514e
+202	1848	7973793431039397	CMakeFiles/DrawTools.dir/resizablepixmapitem.cpp.obj	37adcab66e10960
+5	740	7973796137463181	build.ninja	420783a1096b764
+943	3191	7973535895633440	CMakeFiles/DrawTools.dir/symbollibrary.cpp.obj	f38e80a9e7e30ea4
+211	4088	7973795640887547	CMakeFiles/DrawTools.dir/mainwindow.cpp.obj	9938dc9a7fc0f7c4
+209	1908	7973795995064720	CMakeFiles/DrawTools.dir/resizableequationitem.cpp.obj	3131599540b1df10
 812	3717	7973482843826650	CMakeFiles/DrawTools.dir/diagramrectitem.cpp.obj	7e126b2f7792dc81
+190	2012	7973784136238067	CMakeFiles/DrawTools.dir/diagramscene.cpp.obj	a8dc982254fb79be
+565	2908	7973782827260638	CMakeFiles/DrawTools.dir/propertiespanel.cpp.obj	5b5ec33f8a67d816
+44	208	7973795993412996	DrawTools_autogen/timestamp	20ddef7da9a4d3c6
+218	2645	7973795640962727	CMakeFiles/DrawTools.dir/filemanager.cpp.obj	67483616b23db87a
+1910	2628	7973796012068674	DrawTools.exe	d98bbc2a1c1710d2
+44	208	7973795993412996	DrawTools_autogen/mocs_compilation.cpp	20ddef7da9a4d3c6
+553	2396	7973782827150496	CMakeFiles/DrawTools.dir/main.cpp.obj	91472577d49e514e
+549	2691	7973782827110496	CMakeFiles/DrawTools.dir/DrawTools_autogen/mocs_compilation.cpp.obj	420a9da4d35298af
+44	208	7973795993412996	C:/HOME/HochschuleBremerhaven2025/qt programs/DrawTools/build/Desktop_Qt_6_11_0_MinGW_64_bit-Debug/DrawTools_autogen/mocs_compilation.cpp	20ddef7da9a4d3c6
 805	3834	7973482843752334	CMakeFiles/DrawTools.dir/diagramview.cpp.obj	ff67580f39c6762e
 809	3926	7973482843782228	CMakeFiles/DrawTools.dir/arrowitem.cpp.obj	c3c9ebd7c2ee89b1
-825	3948	7973482843947668	CMakeFiles/DrawTools.dir/symbollibrary.cpp.obj	f38e80a9e7e30ea4
-788	4011	7973482843582226	CMakeFiles/DrawTools.dir/DrawTools_autogen/mocs_compilation.cpp.obj	420a9da4d35298af
-801	4034	7973482843712216	CMakeFiles/DrawTools.dir/diagramscene.cpp.obj	a8dc982254fb79be
-816	4146	7973482843862491	CMakeFiles/DrawTools.dir/filemanager.cpp.obj	67483616b23db87a
-821	4164	7973482843902485	CMakeFiles/DrawTools.dir/propertiespanel.cpp.obj	5b5ec33f8a67d816
-797	4727	7973482843672236	CMakeFiles/DrawTools.dir/mainwindow.cpp.obj	9938dc9a7fc0f7c4
-4728	5312	7973482882974167	DrawTools.exe	3dc5a217f0ae3623
-63	928	7973535894805355	DrawTools_autogen/timestamp	20ddef7da9a4d3c6
-63	928	7973535894805355	DrawTools_autogen/mocs_compilation.cpp	20ddef7da9a4d3c6
-63	928	7973535894805355	C:/HOME/HochschuleBremerhaven2025/qt programs/DrawTools/build/Desktop_Qt_6_11_0_MinGW_64_bit-Debug/DrawTools_autogen/timestamp	20ddef7da9a4d3c6
-63	928	7973535894805355	C:/HOME/HochschuleBremerhaven2025/qt programs/DrawTools/build/Desktop_Qt_6_11_0_MinGW_64_bit-Debug/DrawTools_autogen/mocs_compilation.cpp	20ddef7da9a4d3c6
-943	3191	7973535895633440	CMakeFiles/DrawTools.dir/symbollibrary.cpp.obj	f38e80a9e7e30ea4
-930	3199	7973535895503533	CMakeFiles/DrawTools.dir/DrawTools_autogen/mocs_compilation.cpp.obj	420a9da4d35298af
-940	3205	7973535895593433	CMakeFiles/DrawTools.dir/diagramscene.cpp.obj	a8dc982254fb79be
-936	3829	7973535895553437	CMakeFiles/DrawTools.dir/mainwindow.cpp.obj	9938dc9a7fc0f7c4
-3830	4414	7973535924490771	DrawTools.exe	3dc5a217f0ae3623
-10	723	7973538335083848	DrawTools_autogen/timestamp	20ddef7da9a4d3c6
-10	723	7973538335083848	DrawTools_autogen/mocs_compilation.cpp	20ddef7da9a4d3c6
-10	723	7973538335083848	C:/HOME/HochschuleBremerhaven2025/qt programs/DrawTools/build/Desktop_Qt_6_11_0_MinGW_64_bit-Debug/DrawTools_autogen/timestamp	20ddef7da9a4d3c6
-10	723	7973538335083848	C:/HOME/HochschuleBremerhaven2025/qt programs/DrawTools/build/Desktop_Qt_6_11_0_MinGW_64_bit-Debug/DrawTools_autogen/mocs_compilation.cpp	20ddef7da9a4d3c6
-729	2348	7973538335806579	CMakeFiles/DrawTools.dir/main.cpp.obj	91472577d49e514e
-726	2748	7973538335766581	CMakeFiles/DrawTools.dir/DrawTools_autogen/mocs_compilation.cpp.obj	420a9da4d35298af
-737	2874	7973538335887935	CMakeFiles/DrawTools.dir/filemanager.cpp.obj	67483616b23db87a
-733	3636	7973538335847930	CMakeFiles/DrawTools.dir/mainwindow.cpp.obj	9938dc9a7fc0f7c4
-3638	4233	7973538364890945	DrawTools.exe	3dc5a217f0ae3623
-9	194	7973539890588210	DrawTools_autogen/timestamp	20ddef7da9a4d3c6
-9	194	7973539890588210	DrawTools_autogen/mocs_compilation.cpp	20ddef7da9a4d3c6
-9	194	7973539890588210	C:/HOME/HochschuleBremerhaven2025/qt programs/DrawTools/build/Desktop_Qt_6_11_0_MinGW_64_bit-Debug/DrawTools_autogen/timestamp	20ddef7da9a4d3c6
-9	194	7973539890588210	C:/HOME/HochschuleBremerhaven2025/qt programs/DrawTools/build/Desktop_Qt_6_11_0_MinGW_64_bit-Debug/DrawTools_autogen/mocs_compilation.cpp	20ddef7da9a4d3c6
-196	2807	7973539892453221	CMakeFiles/DrawTools.dir/mainwindow.cpp.obj	9938dc9a7fc0f7c4
-2808	3422	7973539918573005	DrawTools.exe	3dc5a217f0ae3623
-9	199	7973541416650400	DrawTools_autogen/timestamp	20ddef7da9a4d3c6
-9	199	7973541416650400	DrawTools_autogen/mocs_compilation.cpp	20ddef7da9a4d3c6
-9	199	7973541416650400	C:/HOME/HochschuleBremerhaven2025/qt programs/DrawTools/build/Desktop_Qt_6_11_0_MinGW_64_bit-Debug/DrawTools_autogen/timestamp	20ddef7da9a4d3c6
-9	199	7973541416650400	C:/HOME/HochschuleBremerhaven2025/qt programs/DrawTools/build/Desktop_Qt_6_11_0_MinGW_64_bit-Debug/DrawTools_autogen/mocs_compilation.cpp	20ddef7da9a4d3c6
-201	2770	7973541418580048	CMakeFiles/DrawTools.dir/mainwindow.cpp.obj	9938dc9a7fc0f7c4
-2771	3380	7973541444271010	DrawTools.exe	3dc5a217f0ae3623
-9	186	7973542377962946	DrawTools_autogen/timestamp	20ddef7da9a4d3c6
-9	186	7973542377962946	DrawTools_autogen/mocs_compilation.cpp	20ddef7da9a4d3c6
-9	186	7973542377962946	C:/HOME/HochschuleBremerhaven2025/qt programs/DrawTools/build/Desktop_Qt_6_11_0_MinGW_64_bit-Debug/DrawTools_autogen/timestamp	20ddef7da9a4d3c6
-9	186	7973542377962946	C:/HOME/HochschuleBremerhaven2025/qt programs/DrawTools/build/Desktop_Qt_6_11_0_MinGW_64_bit-Debug/DrawTools_autogen/mocs_compilation.cpp	20ddef7da9a4d3c6
-188	2821	7973542379751270	CMakeFiles/DrawTools.dir/mainwindow.cpp.obj	9938dc9a7fc0f7c4
-2822	3414	7973542406090717	DrawTools.exe	3dc5a217f0ae3623
-47	230	7973542573852748	DrawTools_autogen/timestamp	20ddef7da9a4d3c6
-47	230	7973542573852748	DrawTools_autogen/mocs_compilation.cpp	20ddef7da9a4d3c6
-47	230	7973542573852748	C:/HOME/HochschuleBremerhaven2025/qt programs/DrawTools/build/Desktop_Qt_6_11_0_MinGW_64_bit-Debug/DrawTools_autogen/timestamp	20ddef7da9a4d3c6
-47	230	7973542573852748	C:/HOME/HochschuleBremerhaven2025/qt programs/DrawTools/build/Desktop_Qt_6_11_0_MinGW_64_bit-Debug/DrawTools_autogen/mocs_compilation.cpp	20ddef7da9a4d3c6
-231	2807	7973542575690523	CMakeFiles/DrawTools.dir/mainwindow.cpp.obj	9938dc9a7fc0f7c4
-2808	3427	7973542601463833	DrawTools.exe	3dc5a217f0ae3623
-10	202	7973553575098463	DrawTools_autogen/timestamp	20ddef7da9a4d3c6
-10	202	7973553575098463	DrawTools_autogen/mocs_compilation.cpp	20ddef7da9a4d3c6
-10	202	7973553575098463	C:/HOME/HochschuleBremerhaven2025/qt programs/DrawTools/build/Desktop_Qt_6_11_0_MinGW_64_bit-Debug/DrawTools_autogen/timestamp	20ddef7da9a4d3c6
-10	202	7973553575098463	C:/HOME/HochschuleBremerhaven2025/qt programs/DrawTools/build/Desktop_Qt_6_11_0_MinGW_64_bit-Debug/DrawTools_autogen/mocs_compilation.cpp	20ddef7da9a4d3c6
-204	2972	7973553577040220	CMakeFiles/DrawTools.dir/mainwindow.cpp.obj	9938dc9a7fc0f7c4
-2974	3575	7973553604736899	DrawTools.exe	3dc5a217f0ae3623
-45	236	7973553849095738	DrawTools_autogen/timestamp	20ddef7da9a4d3c6
-45	236	7973553849095738	DrawTools_autogen/mocs_compilation.cpp	20ddef7da9a4d3c6
-45	236	7973553849095738	C:/HOME/HochschuleBremerhaven2025/qt programs/DrawTools/build/Desktop_Qt_6_11_0_MinGW_64_bit-Debug/DrawTools_autogen/timestamp	20ddef7da9a4d3c6
-45	236	7973553849095738	C:/HOME/HochschuleBremerhaven2025/qt programs/DrawTools/build/Desktop_Qt_6_11_0_MinGW_64_bit-Debug/DrawTools_autogen/mocs_compilation.cpp	20ddef7da9a4d3c6
-238	2880	7973553851013900	CMakeFiles/DrawTools.dir/mainwindow.cpp.obj	9938dc9a7fc0f7c4
-2880	3498	7973553877438514	DrawTools.exe	3dc5a217f0ae3623
+44	208	7973795993412996	C:/HOME/HochschuleBremerhaven2025/qt programs/DrawTools/build/Desktop_Qt_6_11_0_MinGW_64_bit-Debug/DrawTools_autogen/timestamp	20ddef7da9a4d3c6
+11	193	7973797011849881	DrawTools_autogen/timestamp	20ddef7da9a4d3c6
+11	193	7973797011849881	DrawTools_autogen/mocs_compilation.cpp	20ddef7da9a4d3c6
+11	193	7973797011849881	C:/HOME/HochschuleBremerhaven2025/qt programs/DrawTools/build/Desktop_Qt_6_11_0_MinGW_64_bit-Debug/DrawTools_autogen/timestamp	20ddef7da9a4d3c6
+11	193	7973797011849881	C:/HOME/HochschuleBremerhaven2025/qt programs/DrawTools/build/Desktop_Qt_6_11_0_MinGW_64_bit-Debug/DrawTools_autogen/mocs_compilation.cpp	20ddef7da9a4d3c6
+195	3060	7973797013695102	CMakeFiles/DrawTools.dir/mainwindow.cpp.obj	9938dc9a7fc0f7c4
+3061	3788	7973797042347482	DrawTools.exe	d98bbc2a1c1710d2
+10	198	7973798296067336	DrawTools_autogen/timestamp	20ddef7da9a4d3c6
+10	198	7973798296067336	DrawTools_autogen/mocs_compilation.cpp	20ddef7da9a4d3c6
+10	198	7973798296067336	C:/HOME/HochschuleBremerhaven2025/qt programs/DrawTools/build/Desktop_Qt_6_11_0_MinGW_64_bit-Debug/DrawTools_autogen/timestamp	20ddef7da9a4d3c6
+10	198	7973798296067336	C:/HOME/HochschuleBremerhaven2025/qt programs/DrawTools/build/Desktop_Qt_6_11_0_MinGW_64_bit-Debug/DrawTools_autogen/mocs_compilation.cpp	20ddef7da9a4d3c6
+201	2998	7973798297973271	CMakeFiles/DrawTools.dir/mainwindow.cpp.obj	9938dc9a7fc0f7c4
+2999	3718	7973798325959363	DrawTools.exe	d98bbc2a1c1710d2
+10	195	7973800688586991	DrawTools_autogen/timestamp	20ddef7da9a4d3c6
+10	195	7973800688586991	DrawTools_autogen/mocs_compilation.cpp	20ddef7da9a4d3c6
+10	195	7973800688586991	C:/HOME/HochschuleBremerhaven2025/qt programs/DrawTools/build/Desktop_Qt_6_11_0_MinGW_64_bit-Debug/DrawTools_autogen/timestamp	20ddef7da9a4d3c6
+10	195	7973800688586991	C:/HOME/HochschuleBremerhaven2025/qt programs/DrawTools/build/Desktop_Qt_6_11_0_MinGW_64_bit-Debug/DrawTools_autogen/mocs_compilation.cpp	20ddef7da9a4d3c6
+196	3067	7973800690441203	CMakeFiles/DrawTools.dir/mainwindow.cpp.obj	9938dc9a7fc0f7c4
+37	746	7973800832793349	DrawTools.exe	d98bbc2a1c1710d2

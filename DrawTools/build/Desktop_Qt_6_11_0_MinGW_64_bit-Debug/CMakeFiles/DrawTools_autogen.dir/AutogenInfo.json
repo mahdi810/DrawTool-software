@@ -392,6 +392,18 @@
 			null
 		],
 		[
+			"C:/HOME/HochschuleBremerhaven2025/qt programs/DrawTools/resizableequationitem.h",
+			"MU",
+			"EWIEGA46WW/moc_resizableequationitem.cpp",
+			null
+		],
+		[
+			"C:/HOME/HochschuleBremerhaven2025/qt programs/DrawTools/resizablepixmapitem.h",
+			"MU",
+			"EWIEGA46WW/moc_resizablepixmapitem.cpp",
+			null
+		],
+		[
 			"C:/HOME/HochschuleBremerhaven2025/qt programs/DrawTools/symbollibrary.h",
 			"MU",
 			"EWIEGA46WW/moc_symbollibrary.cpp",
@@ -508,6 +520,16 @@
 		],
 		[
 			"C:/HOME/HochschuleBremerhaven2025/qt programs/DrawTools/propertiespanel.cpp",
+			"MU",
+			null
+		],
+		[
+			"C:/HOME/HochschuleBremerhaven2025/qt programs/DrawTools/resizableequationitem.cpp",
+			"MU",
+			null
+		],
+		[
+			"C:/HOME/HochschuleBremerhaven2025/qt programs/DrawTools/resizablepixmapitem.cpp",
 			"MU",
 			null
 		],

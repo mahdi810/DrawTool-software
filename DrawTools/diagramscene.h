@@ -38,6 +38,8 @@ public:
     int  gridSize()    const                { return m_gridSize; }
     void setGridVisible(bool v)             { m_gridVisible = v; update(); }
     bool gridVisible() const                { return m_gridVisible; }
+    void setPageRect(const QRectF &rect);
+    QRectF pageRect() const                 { return m_pageRect; }
 
     void setCurrentPen        (const QPen   &p) { m_pen   = p; }
     void setCurrentBrush      (const QBrush &b) { m_brush = b; }
@@ -94,6 +96,8 @@ private:
 
     QVector<QGraphicsItem*> m_clipboard;
     QPointF                 m_pasteOffset;
+
+    QRectF                  m_pageRect;
 };
 
 #endif // DIAGRAMSCENE_H
