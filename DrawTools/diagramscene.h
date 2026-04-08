@@ -2,12 +2,14 @@
 #define DIAGRAMSCENE_H
 
 #include <QGraphicsScene>
-#include <QGraphicsLineItem>
-#include <QGraphicsTextItem>
-#include <QPixmap>
-#include <QKeyEvent>
 #include <QUndoStack>
-#include "commands.h"
+#include <QPen>
+#include <QBrush>
+#include <QFont>
+#include <QColor>
+#include <QPixmap>
+#include <QVector>
+#include "arrowitem.h"
 
 class DiagramScene : public QGraphicsScene
 {
@@ -19,51 +21,79 @@ public:
         InsertRectMode,
         InsertEllipseMode,
         InsertLineMode,
+        InsertArrowMode,
         InsertTextMode,
         InsertSymbolMode
     };
+    Q_ENUM(Mode)
 
     explicit DiagramScene(QObject *parent = nullptr);
 
-    void setMode(Mode mode);
-    Mode mode() const { return m_mode; }
-
-    void setGridSize(int size);
-    int  gridSize()    const { return m_gridSize; }
-
-    void setGridVisible(bool visible);
-    bool gridVisible() const { return m_gridVisible; }
-
-    void setCurrentSymbol(const QPixmap &pixmap);
-
     QUndoStack *undoStack() const { return m_undoStack; }
 
+    void setMode(Mode mode);
+    Mode mode()  const { return m_mode; }
+
+    void setGridSize   (int s)              { m_gridSize = s; update(); }
+    int  gridSize()    const                { return m_gridSize; }
+    void setGridVisible(bool v)             { m_gridVisible = v; update(); }
+    bool gridVisible() const                { return m_gridVisible; }
+
+    void setCurrentPen        (const QPen   &p) { m_pen   = p; }
+    void setCurrentBrush      (const QBrush &b) { m_brush = b; }
+    void setCurrentFont       (const QFont  &f) { m_font  = f; }
+    void setCurrentTextColor  (const QColor &c) { m_textColor = c; }
+    void setCurrentStartArrow (ArrowItem::ArrowType t) { m_startArrow = t; }
+    void setCurrentEndArrow   (ArrowItem::ArrowType t) { m_endArrow   = t; }
+    void setCurrentSymbol     (const QPixmap &px)      { m_symbol = px; }
+
+    QPen   currentPen()   const { return m_pen; }
+    QBrush currentBrush() const { return m_brush; }
+    QFont  currentFont()  const { return m_font; }
+    QColor currentTextColor() const { return m_textColor; }
+
+    void copySelection(bool cut);
+    void paste();
+    void duplicate();
+    void selectAll();
+    void bringToFront();
+    void sendToBack();
+    void bringForward();
+    void sendBackward();
+
 signals:
-    void itemInserted();
+    void itemInserted(QGraphicsItem *item);
+    void modeChanged (Mode mode);
 
 protected:
     void drawBackground(QPainter *painter, const QRectF &rect) override;
-
-    void mousePressEvent  (QGraphicsSceneMouseEvent *event) override;
-    void mouseMoveEvent   (QGraphicsSceneMouseEvent *event) override;
-    void mouseReleaseEvent(QGraphicsSceneMouseEvent *event) override;
-    void keyPressEvent    (QKeyEvent                *event) override;
+    void mousePressEvent      (QGraphicsSceneMouseEvent *event) override;
+    void mouseMoveEvent       (QGraphicsSceneMouseEvent *event) override;
+    void mouseReleaseEvent    (QGraphicsSceneMouseEvent *event) override;
+    void keyPressEvent        (QKeyEvent *event)               override;
 
 private:
-    QPointF snapToGrid(const QPointF &pos) const;
+    QPointF snapToGrid(const QPointF &pt) const;
 
-    Mode    m_mode;
-    int     m_gridSize;
-    bool    m_gridVisible;
-    QPointF m_startPos;
-    QPointF m_itemOldPos;
-    QPixmap m_currentSymbol;
+    QUndoStack           *m_undoStack;
+    Mode                  m_mode       = SelectMode;
+    int                   m_gridSize   = 20;
+    bool                  m_gridVisible= true;
+    bool                  m_drawing    = false;
+    QPointF               m_startPt;
 
-    QGraphicsItem     *m_drawingItem;
-    QGraphicsLineItem *m_tempLine;
-    QGraphicsTextItem *m_tempText;
+    QPen                  m_pen;
+    QBrush                m_brush;
+    QFont                 m_font;
+    QColor                m_textColor  = Qt::black;
+    ArrowItem::ArrowType  m_startArrow = ArrowItem::NoArrow;
+    ArrowItem::ArrowType  m_endArrow   = ArrowItem::FilledArrow;
+    QPixmap               m_symbol;
 
-    QUndoStack *m_undoStack;
+    QGraphicsItem        *m_tempItem   = nullptr;
+
+    QVector<QGraphicsItem*> m_clipboard;
+    QPointF                 m_pasteOffset;
 };
 
 #endif // DIAGRAMSCENE_H

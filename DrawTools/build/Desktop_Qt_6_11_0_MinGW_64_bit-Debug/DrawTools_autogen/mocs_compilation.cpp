@@ -2,4 +2,5 @@
 #include "EWIEGA46WW/moc_diagramscene.cpp"
 #include "EWIEGA46WW/moc_diagramview.cpp"
 #include "EWIEGA46WW/moc_mainwindow.cpp"
+#include "EWIEGA46WW/moc_propertiespanel.cpp"
 #include "EWIEGA46WW/moc_symbollibrary.cpp"

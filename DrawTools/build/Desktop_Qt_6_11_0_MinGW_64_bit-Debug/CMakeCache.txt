@@ -194,13 +194,13 @@ CMAKE_PROJECT_INCLUDE_BEFORE:FILEPATH=C:/HOME/HochschuleBremerhaven2025/qt progr
 CMAKE_PROJECT_NAME:STATIC=DrawTools
 
 //Value Computed by CMake
-CMAKE_PROJECT_VERSION:STATIC=0.1
+CMAKE_PROJECT_VERSION:STATIC=1.0
 
 //Value Computed by CMake
-CMAKE_PROJECT_VERSION_MAJOR:STATIC=0
+CMAKE_PROJECT_VERSION_MAJOR:STATIC=1
 
 //Value Computed by CMake
-CMAKE_PROJECT_VERSION_MINOR:STATIC=1
+CMAKE_PROJECT_VERSION_MINOR:STATIC=0
 
 //Value Computed by CMake
 CMAKE_PROJECT_VERSION_PATCH:STATIC=
@@ -339,6 +339,9 @@ Qt6GuiTools_DIR:PATH=C:/Qt/6.11.0/mingw_64/lib/cmake/Qt6GuiTools
 
 //The directory containing a CMake configuration file for Qt6Gui.
 Qt6Gui_DIR:PATH=C:/Qt/6.11.0/mingw_64/lib/cmake/Qt6Gui
+
+//The directory containing a CMake configuration file for Qt6Svg.
+Qt6Svg_DIR:PATH=C:/Qt/6.11.0/mingw_64/lib/cmake/Qt6Svg
 
 //The directory containing a CMake configuration file for Qt6WidgetsTools.
 Qt6WidgetsTools_DIR:PATH=C:/Qt/6.11.0/mingw_64/lib/cmake/Qt6WidgetsTools

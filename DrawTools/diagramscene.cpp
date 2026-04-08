@@ -1,109 +1,73 @@
 #include "diagramscene.h"
+#include "commands.h"
+#include "arrowitem.h"
+#include "diagramrectitem.h"
+#include "filemanager.h"
 
-#include <QGraphicsRectItem>
+#include <QGraphicsSceneMouseEvent>
 #include <QGraphicsEllipseItem>
 #include <QGraphicsLineItem>
 #include <QGraphicsTextItem>
 #include <QGraphicsPixmapItem>
-#include <QGraphicsSceneMouseEvent>
+#include <QKeyEvent>
 #include <QPainter>
+#include <QUndoStack>
+#include <QJsonObject>
+#include <QColor>
+#include <cmath>
 
 DiagramScene::DiagramScene(QObject *parent)
     : QGraphicsScene(parent)
-    , m_mode(SelectMode)
-    , m_gridSize(20)
-    , m_gridVisible(true)
-    , m_drawingItem(nullptr)
-    , m_tempLine(nullptr)
-    , m_tempText(nullptr)
+    , m_undoStack(new QUndoStack(this))
 {
     setSceneRect(-2000, -2000, 4000, 4000);
-    setBackgroundBrush(QColor("#f7f6f2"));
 
-    m_undoStack = new QUndoStack(this);
-    m_undoStack->setUndoLimit(100);
+    m_pen.setColor(Qt::black);
+    m_pen.setWidthF(1.5);
+    m_pen.setCapStyle(Qt::RoundCap);
+
+    m_brush = QBrush(QColor(220, 235, 255, 180));
+
+    m_font.setFamily("Segoe UI");
+    m_font.setPointSize(11);
 }
 
 void DiagramScene::setMode(Mode mode)
 {
     m_mode = mode;
-
-    if (m_tempText && mode != InsertTextMode) {
-        if (m_tempText->toPlainText().trimmed().isEmpty())
-            removeItem(m_tempText);
-        else {
-            m_undoStack->push(new AddItemCommand(this, m_tempText));
-            emit itemInserted();
-        }
-        m_tempText = nullptr;
-    }
+    emit modeChanged(mode);
 }
 
-void DiagramScene::setGridSize(int size)
-{
-    m_gridSize = qMax(5, size);
-    update();
-}
-
-void DiagramScene::setGridVisible(bool visible)
-{
-    m_gridVisible = visible;
-    update();
-}
-
-void DiagramScene::setCurrentSymbol(const QPixmap &pixmap)
-{
-    m_currentSymbol = pixmap;
-}
-
-// ──────────────────────────────────────────────
-//  Grid
-// ──────────────────────────────────────────────
+// ── Grid drawing ──────────────────────────────────
 void DiagramScene::drawBackground(QPainter *painter, const QRectF &rect)
 {
     QGraphicsScene::drawBackground(painter, rect);
-    if (!m_gridVisible) return;
+    painter->fillRect(rect, QColor(250, 250, 250));
 
-    painter->save();
-    painter->setPen(QPen(QColor(200, 198, 194, 180), 0));
+    if (!m_gridVisible || m_gridSize <= 0) return;
 
-    qreal left   = std::floor(rect.left()  / m_gridSize) * m_gridSize;
-    qreal top    = std::floor(rect.top()   / m_gridSize) * m_gridSize;
-    qreal right  = rect.right();
-    qreal bottom = rect.bottom();
+    QPen dotPen(QColor(210, 210, 210), 1);
+    painter->setPen(dotPen);
 
-    for (qreal x = left; x <= right; x += m_gridSize)
-        painter->drawLine(QPointF(x, top), QPointF(x, bottom));
-    for (qreal y = top; y <= bottom; y += m_gridSize)
-        painter->drawLine(QPointF(left, y), QPointF(right, y));
+    int left   = static_cast<int>(std::floor(rect.left()   / m_gridSize)) * m_gridSize;
+    int top    = static_cast<int>(std::floor(rect.top()    / m_gridSize)) * m_gridSize;
+    int right  = static_cast<int>(std::ceil (rect.right()  / m_gridSize)) * m_gridSize;
+    int bottom = static_cast<int>(std::ceil (rect.bottom() / m_gridSize)) * m_gridSize;
 
-    painter->setPen(QPen(QColor(170, 168, 163, 220), 0));
-    int   major = m_gridSize * 5;
-    qreal leftM = std::floor(rect.left() / major) * major;
-    qreal topM  = std::floor(rect.top()  / major) * major;
-
-    for (qreal x = leftM; x <= right; x += major)
-        painter->drawLine(QPointF(x, top), QPointF(x, bottom));
-    for (qreal y = topM; y <= bottom; y += major)
-        painter->drawLine(QPointF(left, y), QPointF(right, y));
-
-    painter->restore();
+    for (int x = left; x <= right; x += m_gridSize)
+        for (int y = top; y <= bottom; y += m_gridSize)
+            painter->drawPoint(x, y);
 }
 
-// ──────────────────────────────────────────────
-//  Snap
-// ──────────────────────────────────────────────
-QPointF DiagramScene::snapToGrid(const QPointF &pos) const
+QPointF DiagramScene::snapToGrid(const QPointF &pt) const
 {
-    return {
-        std::round(pos.x() / m_gridSize) * m_gridSize,
-        std::round(pos.y() / m_gridSize) * m_gridSize
-    };
+    if (m_gridSize <= 0) return pt;
+    qreal x = qRound(pt.x() / m_gridSize) * m_gridSize;
+    qreal y = qRound(pt.y() / m_gridSize) * m_gridSize;
+    return {x, y};
 }
 
-// ──────────────────────────────────────────────
-//  Mouse press
-// ──────────────────────────────────────────────
+// ── Mouse Press ───────────────────────────────────
 void DiagramScene::mousePressEvent(QGraphicsSceneMouseEvent *event)
 {
     if (event->button() != Qt::LeftButton) {
@@ -111,198 +75,237 @@ void DiagramScene::mousePressEvent(QGraphicsSceneMouseEvent *event)
         return;
     }
 
-    m_startPos = snapToGrid(event->scenePos());
+    QPointF pt = snapToGrid(event->scenePos());
 
-    switch (m_mode) {
-
-    case InsertRectMode: {
-        auto *item = new QGraphicsRectItem(QRectF(m_startPos, QSizeF(0, 0)));
-        item->setPen(QPen(Qt::black, 1.5));
-        item->setBrush(QColor(220, 235, 255, 180));
-        item->setFlag(QGraphicsItem::ItemIsSelectable);
-        item->setFlag(QGraphicsItem::ItemIsMovable);
-        addItem(item);
-        m_drawingItem = item;
-        break;
+    if (m_mode == SelectMode) {
+        QGraphicsScene::mousePressEvent(event);
+        return;
     }
 
-    case InsertEllipseMode: {
-        auto *item = new QGraphicsEllipseItem(QRectF(m_startPos, QSizeF(0, 0)));
-        item->setPen(QPen(Qt::black, 1.5));
-        item->setBrush(QColor(220, 255, 225, 180));
-        item->setFlag(QGraphicsItem::ItemIsSelectable);
-        item->setFlag(QGraphicsItem::ItemIsMovable);
-        addItem(item);
-        m_drawingItem = item;
-        break;
-    }
-
-    case InsertLineMode: {
-        auto *item = new QGraphicsLineItem(QLineF(m_startPos, m_startPos));
-        item->setPen(QPen(Qt::black, 1.5, Qt::SolidLine, Qt::RoundCap));
-        item->setFlag(QGraphicsItem::ItemIsSelectable);
-        item->setFlag(QGraphicsItem::ItemIsMovable);
-        addItem(item);
-        m_tempLine = item;
-        break;
-    }
-
-    case InsertTextMode: {
-        // Commit any in-progress text first
-        if (m_tempText) {
-            if (m_tempText->toPlainText().trimmed().isEmpty())
-                removeItem(m_tempText);
-            else {
-                m_undoStack->push(new AddItemCommand(this, m_tempText));
-                emit itemInserted();
-            }
-            m_tempText = nullptr;
-        }
-
-        auto *item = new QGraphicsTextItem();
-        item->setFont(QFont("Segoe UI", 11));
-        item->setDefaultTextColor(Qt::black);
-        item->setPos(m_startPos);
-        item->setTextInteractionFlags(Qt::TextEditorInteraction);
-        item->setFlag(QGraphicsItem::ItemIsSelectable);
-        item->setFlag(QGraphicsItem::ItemIsMovable);
-        addItem(item);
-        item->setFocus();
-        m_tempText = item;
-        break;
-    }
-
-    case InsertSymbolMode: {
-        if (!m_currentSymbol.isNull()) {
-            auto *item = new QGraphicsPixmapItem(m_currentSymbol);
-            item->setPos(m_startPos - QPointF(m_currentSymbol.width()  / 2.0,
-                                              m_currentSymbol.height() / 2.0));
+    if (m_mode == InsertSymbolMode) {
+        if (!m_symbol.isNull()) {
+            auto *item = new QGraphicsPixmapItem(m_symbol);
+            item->setPos(pt - QPointF(m_symbol.width() / 2.0, m_symbol.height() / 2.0));
             item->setFlag(QGraphicsItem::ItemIsSelectable);
             item->setFlag(QGraphicsItem::ItemIsMovable);
-            addItem(item);
-            // item already on scene → AddItemCommand skips first redo()
             m_undoStack->push(new AddItemCommand(this, item));
-            emit itemInserted();
+            emit itemInserted(item);
         }
-        break;
+        return;
     }
 
-    case SelectMode:
-    default:
-        // Record position BEFORE base class handles the press
-        // (base class may set the mouse grabber)
-        QGraphicsScene::mousePressEvent(event);
-        if (auto *grabbed = mouseGrabberItem())
-            m_itemOldPos = grabbed->pos();
+    if (m_mode == InsertTextMode) {
+        auto *ti = new QGraphicsTextItem;
+        ti->setPlainText("Text");
+        ti->setFont(m_font);
+        ti->setDefaultTextColor(m_textColor);
+        ti->setTextInteractionFlags(Qt::TextEditorInteraction);
+        ti->setFlag(QGraphicsItem::ItemIsSelectable);
+        ti->setFlag(QGraphicsItem::ItemIsMovable);
+        ti->setPos(pt);
+        m_undoStack->push(new AddItemCommand(this, ti));
+        emit itemInserted(ti);
+        return;
+    }
+
+    m_drawing  = true;
+    m_startPt  = pt;
+    m_tempItem = nullptr;
+
+    switch (m_mode) {
+    case InsertRectMode: {
+        auto *ri = new DiagramRectItem(QRectF(pt, QSizeF(1, 1)));
+        ri->setPen(m_pen); ri->setBrush(m_brush);
+        addItem(ri);
+        m_tempItem = ri;
         break;
+    }
+    case InsertEllipseMode: {
+        auto *ei = new QGraphicsEllipseItem(QRectF(pt, QSizeF(1, 1)));
+        ei->setPen(m_pen); ei->setBrush(m_brush);
+        ei->setFlag(QGraphicsItem::ItemIsSelectable);
+        ei->setFlag(QGraphicsItem::ItemIsMovable);
+        addItem(ei);
+        m_tempItem = ei;
+        break;
+    }
+    case InsertLineMode: {
+        auto *li = new QGraphicsLineItem(QLineF(pt, pt));
+        li->setPen(m_pen);
+        li->setFlag(QGraphicsItem::ItemIsSelectable);
+        li->setFlag(QGraphicsItem::ItemIsMovable);
+        addItem(li);
+        m_tempItem = li;
+        break;
+    }
+    case InsertArrowMode: {
+        auto *ai = new ArrowItem(QLineF(pt, pt));
+        ai->setPen(m_pen);
+        ai->setStartArrow(m_startArrow);
+        ai->setEndArrow(m_endArrow);
+        addItem(ai);
+        m_tempItem = ai;
+        break;
+    }
+    default: break;
     }
 }
 
-// ──────────────────────────────────────────────
-//  Mouse move
-// ──────────────────────────────────────────────
+// ── Mouse Move ────────────────────────────────────
 void DiagramScene::mouseMoveEvent(QGraphicsSceneMouseEvent *event)
 {
-    QPointF cur = snapToGrid(event->scenePos());
-
-    if (m_drawingItem) {
-        QRectF r = QRectF(m_startPos, cur).normalized();
-        if (auto *ri = qgraphicsitem_cast<QGraphicsRectItem *>(m_drawingItem))
-            ri->setRect(r);
-        else if (auto *ei = qgraphicsitem_cast<QGraphicsEllipseItem *>(m_drawingItem))
-            ei->setRect(r);
+    if (!m_drawing || !m_tempItem) {
+        QGraphicsScene::mouseMoveEvent(event);
         return;
     }
 
-    if (m_tempLine) {
-        m_tempLine->setLine(QLineF(m_startPos, cur));
-        return;
-    }
+    QPointF pt = snapToGrid(event->scenePos());
 
-    QGraphicsScene::mouseMoveEvent(event);
+    switch (m_mode) {
+    case InsertRectMode:
+        if (auto *ri = dynamic_cast<DiagramRectItem *>(m_tempItem))
+            ri->setRect(QRectF(m_startPt, pt).normalized());
+        break;
+    case InsertEllipseMode:
+        if (auto *ei = qgraphicsitem_cast<QGraphicsEllipseItem *>(m_tempItem))
+            ei->setRect(QRectF(m_startPt, pt).normalized());
+        break;
+    case InsertLineMode:
+        if (auto *li = qgraphicsitem_cast<QGraphicsLineItem *>(m_tempItem))
+            li->setLine(QLineF(m_startPt, pt));
+        break;
+    case InsertArrowMode:
+        if (auto *ai = dynamic_cast<ArrowItem *>(m_tempItem))
+            ai->setLine(QLineF(m_startPt, pt));
+        break;
+    default: break;
+    }
 }
 
-// ──────────────────────────────────────────────
-//  Mouse release
-// ──────────────────────────────────────────────
+// ── Mouse Release ─────────────────────────────────
 void DiagramScene::mouseReleaseEvent(QGraphicsSceneMouseEvent *event)
 {
-    if (event->button() != Qt::LeftButton) {
+    if (!m_drawing || !m_tempItem) {
         QGraphicsScene::mouseReleaseEvent(event);
         return;
     }
+    m_drawing = false;
 
-    // ── Finish rect / ellipse ──────────────────
-    if (m_drawingItem) {
-        QRectF r;
-        if (auto *ri = qgraphicsitem_cast<QGraphicsRectItem *>(m_drawingItem))
-            r = ri->rect();
-        else if (auto *ei = qgraphicsitem_cast<QGraphicsEllipseItem *>(m_drawingItem))
-            r = ei->rect();
-
-        if (r.width() < 4 && r.height() < 4) {
-            removeItem(m_drawingItem);
-            delete m_drawingItem;
-        } else {
-            // item already on scene → AddItemCommand skips first redo()
-            m_undoStack->push(new AddItemCommand(this, m_drawingItem));
-            emit itemInserted();
-        }
-        m_drawingItem = nullptr;
+    // Remove if too small
+    QRectF br = m_tempItem->boundingRect();
+    if (br.width() < 4 && br.height() < 4 &&
+        m_mode != InsertLineMode && m_mode != InsertArrowMode)
+    {
+        removeItem(m_tempItem);
+        delete m_tempItem;
+        m_tempItem = nullptr;
         return;
     }
 
-    // ── Finish line ───────────────────────────
-    if (m_tempLine) {
-        if (m_tempLine->line().length() < 4) {
-            removeItem(m_tempLine);
-            delete m_tempLine;
-        } else {
-            m_undoStack->push(new AddItemCommand(this, m_tempLine));
-            emit itemInserted();
-        }
-        m_tempLine = nullptr;
-        return;
-    }
-
-    // ── Finish move (SelectMode) ──────────────
-    // IMPORTANT: capture grabber BEFORE calling base class,
-    // because base class releases the grab and mouseGrabberItem() → nullptr
-    if (m_mode == SelectMode) {
-        QGraphicsItem *movedItem = mouseGrabberItem();
-        QPointF oldPos = m_itemOldPos;
-
-        QGraphicsScene::mouseReleaseEvent(event);
-
-        if (movedItem && movedItem->pos() != oldPos)
-            m_undoStack->push(new MoveItemCommand(movedItem, oldPos));
-        return;
-    }
-
-    QGraphicsScene::mouseReleaseEvent(event);
+    // Push to undo stack (item already in scene, use a remove/add pair)
+    removeItem(m_tempItem);
+    m_undoStack->push(new AddItemCommand(this, m_tempItem));
+    emit itemInserted(m_tempItem);
+    m_tempItem = nullptr;
 }
 
-// ──────────────────────────────────────────────
-//  Key press
-// ──────────────────────────────────────────────
+// ── Key Press ─────────────────────────────────────
 void DiagramScene::keyPressEvent(QKeyEvent *event)
 {
-    if (m_tempText) {
-        bool commit  = (event->key() == Qt::Key_Escape);
-        bool confirm = (event->key() == Qt::Key_Return &&
-                        !(event->modifiers() & Qt::ShiftModifier));
-
-        if (commit || confirm) {
-            if (m_tempText->toPlainText().trimmed().isEmpty())
-                removeItem(m_tempText);
-            else {
-                m_undoStack->push(new AddItemCommand(this, m_tempText));
-                emit itemInserted();
-            }
-            m_tempText = nullptr;
-            return;
+    if (event->key() == Qt::Key_Delete || event->key() == Qt::Key_Backspace) {
+        const auto sel = selectedItems();
+        if (!sel.isEmpty()) {
+            m_undoStack->beginMacro("Delete Items");
+            for (auto *item : sel)
+                m_undoStack->push(new RemoveItemCommand(this, item));
+            m_undoStack->endMacro();
         }
+        return;
     }
-
     QGraphicsScene::keyPressEvent(event);
+}
+
+// ── Clipboard ─────────────────────────────────────
+void DiagramScene::copySelection(bool cut)
+{
+    for (auto *item : m_clipboard) {
+        if (!items().contains(item)) delete item;
+    }
+    m_clipboard.clear();
+    m_pasteOffset = QPointF(20, 20);
+
+    const auto sel = selectedItems();
+    for (auto *item : sel) {
+        QJsonObject obj = FileManager::itemToJson(item);
+        QGraphicsItem *copy = FileManager::itemFromJson(obj);
+        if (copy) m_clipboard.append(copy);
+        if (cut) m_undoStack->push(new RemoveItemCommand(this, item));
+    }
+}
+
+void DiagramScene::paste()
+{
+    if (m_clipboard.isEmpty()) return;
+    clearSelection();
+    m_undoStack->beginMacro("Paste");
+    for (auto *item : m_clipboard) {
+        QJsonObject obj = FileManager::itemToJson(item);
+        QGraphicsItem *copy = FileManager::itemFromJson(obj);
+        if (!copy) continue;
+        copy->setPos(item->pos() + m_pasteOffset);
+        m_undoStack->push(new AddItemCommand(this, copy));
+        copy->setSelected(true);
+    }
+    m_undoStack->endMacro();
+    m_pasteOffset += QPointF(20, 20);
+}
+
+void DiagramScene::duplicate()
+{
+    const auto sel = selectedItems();
+    if (sel.isEmpty()) return;
+    clearSelection();
+    m_undoStack->beginMacro("Duplicate");
+    for (auto *item : sel) {
+        QJsonObject obj = FileManager::itemToJson(item);
+        QGraphicsItem *copy = FileManager::itemFromJson(obj);
+        if (!copy) continue;
+        copy->setPos(item->pos() + QPointF(20, 20));
+        m_undoStack->push(new AddItemCommand(this, copy));
+        copy->setSelected(true);
+    }
+    m_undoStack->endMacro();
+}
+
+void DiagramScene::selectAll()
+{
+    const auto all = items();
+    for (auto *item : all) item->setSelected(true);
+}
+
+// ── Z-order ───────────────────────────────────────
+void DiagramScene::bringToFront()
+{
+    qreal maxZ = 0;
+    const auto all = items();
+    for (auto *i : all) maxZ = qMax(maxZ, i->zValue());
+    for (auto *i : selectedItems()) i->setZValue(maxZ + 1);
+}
+
+void DiagramScene::sendToBack()
+{
+    qreal minZ = 0;
+    const auto all = items();
+    for (auto *i : all) minZ = qMin(minZ, i->zValue());
+    for (auto *i : selectedItems()) i->setZValue(minZ - 1);
+}
+
+void DiagramScene::bringForward()
+{
+    for (auto *i : selectedItems()) i->setZValue(i->zValue() + 1);
+}
+
+void DiagramScene::sendBackward()
+{
+    for (auto *i : selectedItems()) i->setZValue(i->zValue() - 1);
 }

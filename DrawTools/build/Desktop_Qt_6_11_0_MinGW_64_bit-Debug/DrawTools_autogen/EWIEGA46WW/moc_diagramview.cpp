@@ -38,10 +38,24 @@ template <> constexpr inline auto DiagramView::qt_create_metaobjectdata<qt_meta_
 {
     namespace QMC = QtMocConstants;
     QtMocHelpers::StringRefStorage qt_stringData {
-        "DiagramView"
+        "DiagramView",
+        "mouseMoved",
+        "",
+        "QPointF",
+        "scenePos",
+        "zoomChanged",
+        "scaleFactor"
     };
 
     QtMocHelpers::UintData qt_methods {
+        // Signal 'mouseMoved'
+        QtMocHelpers::SignalData<void(const QPointF &)>(1, 2, QMC::AccessPublic, QMetaType::Void, {{
+            { 0x80000000 | 3, 4 },
+        }}),
+        // Signal 'zoomChanged'
+        QtMocHelpers::SignalData<void(qreal)>(5, 2, QMC::AccessPublic, QMetaType::Void, {{
+            { QMetaType::QReal, 6 },
+        }}),
     };
     QtMocHelpers::UintData qt_properties {
     };
@@ -63,10 +77,19 @@ Q_CONSTINIT const QMetaObject DiagramView::staticMetaObject = { {
 void DiagramView::qt_static_metacall(QObject *_o, QMetaObject::Call _c, int _id, void **_a)
 {
     auto *_t = static_cast<DiagramView *>(_o);
-    (void)_t;
-    (void)_c;
-    (void)_id;
-    (void)_a;
+    if (_c == QMetaObject::InvokeMetaMethod) {
+        switch (_id) {
+        case 0: _t->mouseMoved((*reinterpret_cast<std::add_pointer_t<QPointF>>(_a[1]))); break;
+        case 1: _t->zoomChanged((*reinterpret_cast<std::add_pointer_t<qreal>>(_a[1]))); break;
+        default: ;
+        }
+    }
+    if (_c == QMetaObject::IndexOfMethod) {
+        if (QtMocHelpers::indexOfMethod<void (DiagramView::*)(const QPointF & )>(_a, &DiagramView::mouseMoved, 0))
+            return;
+        if (QtMocHelpers::indexOfMethod<void (DiagramView::*)(qreal )>(_a, &DiagramView::zoomChanged, 1))
+            return;
+    }
 }
 
 const QMetaObject *DiagramView::metaObject() const
@@ -85,6 +108,30 @@ void *DiagramView::qt_metacast(const char *_clname)
 int DiagramView::qt_metacall(QMetaObject::Call _c, int _id, void **_a)
 {
     _id = QGraphicsView::qt_metacall(_c, _id, _a);
+    if (_id < 0)
+        return _id;
+    if (_c == QMetaObject::InvokeMetaMethod) {
+        if (_id < 2)
+            qt_static_metacall(this, _c, _id, _a);
+        _id -= 2;
+    }
+    if (_c == QMetaObject::RegisterMethodArgumentMetaType) {
+        if (_id < 2)
+            *reinterpret_cast<QMetaType *>(_a[0]) = QMetaType();
+        _id -= 2;
+    }
     return _id;
+}
+
+// SIGNAL 0
+void DiagramView::mouseMoved(const QPointF & _t1)
+{
+    QMetaObject::activate<void>(this, &staticMetaObject, 0, nullptr, _t1);
+}
+
+// SIGNAL 1
+void DiagramView::zoomChanged(qreal _t1)
+{
+    QMetaObject::activate<void>(this, &staticMetaObject, 1, nullptr, _t1);
 }
 QT_WARNING_POP

@@ -34,3 +34,8 @@ void SymbolLibrary::addSymbol(const QString &name, const QPixmap &thumbnail)
     m_symbols.append({name, thumbnail});
     m_listWidget->addItem(new QListWidgetItem(QIcon(thumbnail), name));
 }
+
+bool SymbolLibrary::hasSymbolAt(int index) const
+{
+    return index >= 0 && index < m_symbols.size();
+}

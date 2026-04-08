@@ -10,14 +10,18 @@ class DiagramView : public QGraphicsView
 public:
     explicit DiagramView(QWidget *parent = nullptr);
 
+signals:
+    void mouseMoved (const QPointF &scenePos);
+    void zoomChanged(qreal scaleFactor);
+
 protected:
-    void wheelEvent(QWheelEvent *event) override;
-    void mousePressEvent(QMouseEvent *event) override;
-    void mouseMoveEvent(QMouseEvent *event) override;
-    void mouseReleaseEvent(QMouseEvent *event) override;
+    void wheelEvent      (QWheelEvent   *event) override;
+    void mousePressEvent (QMouseEvent   *event) override;
+    void mouseReleaseEvent(QMouseEvent  *event) override;
+    void mouseMoveEvent  (QMouseEvent   *event) override;
 
 private:
-    bool   m_panning = false;
+    bool   m_panning  = false;
     QPoint m_panStart;
 };
 

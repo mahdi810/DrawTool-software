@@ -20,6 +20,7 @@ class SymbolLibrary : public QDockWidget
 public:
     explicit SymbolLibrary(QWidget *parent = nullptr);
     void addSymbol(const QString &name, const QPixmap &thumbnail);
+    bool hasSymbolAt(int index) const;
     const Symbol &symbolAt(int index) const { return m_symbols[index]; }
 
 signals:

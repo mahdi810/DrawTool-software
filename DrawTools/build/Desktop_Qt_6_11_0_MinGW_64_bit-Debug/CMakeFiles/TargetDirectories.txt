@@ -1,9 +1,5 @@
 C:/HOME/HochschuleBremerhaven2025/qt programs/DrawTools/build/Desktop_Qt_6_11_0_MinGW_64_bit-Debug/CMakeFiles/DrawTools.dir
 C:/HOME/HochschuleBremerhaven2025/qt programs/DrawTools/build/Desktop_Qt_6_11_0_MinGW_64_bit-Debug/CMakeFiles/edit_cache.dir
 C:/HOME/HochschuleBremerhaven2025/qt programs/DrawTools/build/Desktop_Qt_6_11_0_MinGW_64_bit-Debug/CMakeFiles/rebuild_cache.dir
-C:/HOME/HochschuleBremerhaven2025/qt programs/DrawTools/build/Desktop_Qt_6_11_0_MinGW_64_bit-Debug/CMakeFiles/list_install_components.dir
-C:/HOME/HochschuleBremerhaven2025/qt programs/DrawTools/build/Desktop_Qt_6_11_0_MinGW_64_bit-Debug/CMakeFiles/install.dir
-C:/HOME/HochschuleBremerhaven2025/qt programs/DrawTools/build/Desktop_Qt_6_11_0_MinGW_64_bit-Debug/CMakeFiles/install/local.dir
-C:/HOME/HochschuleBremerhaven2025/qt programs/DrawTools/build/Desktop_Qt_6_11_0_MinGW_64_bit-Debug/CMakeFiles/install/strip.dir
 C:/HOME/HochschuleBremerhaven2025/qt programs/DrawTools/build/Desktop_Qt_6_11_0_MinGW_64_bit-Debug/CMakeFiles/DrawTools_autogen_timestamp_deps.dir
 C:/HOME/HochschuleBremerhaven2025/qt programs/DrawTools/build/Desktop_Qt_6_11_0_MinGW_64_bit-Debug/CMakeFiles/DrawTools_autogen.dir

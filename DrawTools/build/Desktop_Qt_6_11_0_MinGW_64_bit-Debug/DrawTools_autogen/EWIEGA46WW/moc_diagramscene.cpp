@@ -40,16 +40,44 @@ template <> constexpr inline auto DiagramScene::qt_create_metaobjectdata<qt_meta
     QtMocHelpers::StringRefStorage qt_stringData {
         "DiagramScene",
         "itemInserted",
-        ""
+        "",
+        "QGraphicsItem*",
+        "item",
+        "modeChanged",
+        "Mode",
+        "mode",
+        "SelectMode",
+        "InsertRectMode",
+        "InsertEllipseMode",
+        "InsertLineMode",
+        "InsertArrowMode",
+        "InsertTextMode",
+        "InsertSymbolMode"
     };
 
     QtMocHelpers::UintData qt_methods {
         // Signal 'itemInserted'
-        QtMocHelpers::SignalData<void()>(1, 2, QMC::AccessPublic, QMetaType::Void),
+        QtMocHelpers::SignalData<void(QGraphicsItem *)>(1, 2, QMC::AccessPublic, QMetaType::Void, {{
+            { 0x80000000 | 3, 4 },
+        }}),
+        // Signal 'modeChanged'
+        QtMocHelpers::SignalData<void(enum Mode)>(5, 2, QMC::AccessPublic, QMetaType::Void, {{
+            { 0x80000000 | 6, 7 },
+        }}),
     };
     QtMocHelpers::UintData qt_properties {
     };
     QtMocHelpers::UintData qt_enums {
+        // enum 'Mode'
+        QtMocHelpers::EnumData<enum Mode>(6, 6, QMC::EnumFlags{}).add({
+            {    8, Mode::SelectMode },
+            {    9, Mode::InsertRectMode },
+            {   10, Mode::InsertEllipseMode },
+            {   11, Mode::InsertLineMode },
+            {   12, Mode::InsertArrowMode },
+            {   13, Mode::InsertTextMode },
+            {   14, Mode::InsertSymbolMode },
+        }),
     };
     return QtMocHelpers::metaObjectData<DiagramScene, qt_meta_tag_ZN12DiagramSceneE_t>(QMC::MetaObjectFlag{}, qt_stringData,
             qt_methods, qt_properties, qt_enums);
@@ -69,12 +97,27 @@ void DiagramScene::qt_static_metacall(QObject *_o, QMetaObject::Call _c, int _id
     auto *_t = static_cast<DiagramScene *>(_o);
     if (_c == QMetaObject::InvokeMetaMethod) {
         switch (_id) {
-        case 0: _t->itemInserted(); break;
+        case 0: _t->itemInserted((*reinterpret_cast<std::add_pointer_t<QGraphicsItem*>>(_a[1]))); break;
+        case 1: _t->modeChanged((*reinterpret_cast<std::add_pointer_t<enum Mode>>(_a[1]))); break;
         default: ;
         }
     }
+    if (_c == QMetaObject::RegisterMethodArgumentMetaType) {
+        switch (_id) {
+        default: *reinterpret_cast<QMetaType *>(_a[0]) = QMetaType(); break;
+        case 0:
+            switch (*reinterpret_cast<int*>(_a[1])) {
+            default: *reinterpret_cast<QMetaType *>(_a[0]) = QMetaType(); break;
+            case 0:
+                *reinterpret_cast<QMetaType *>(_a[0]) = QMetaType::fromType< QGraphicsItem* >(); break;
+            }
+            break;
+        }
+    }
     if (_c == QMetaObject::IndexOfMethod) {
-        if (QtMocHelpers::indexOfMethod<void (DiagramScene::*)()>(_a, &DiagramScene::itemInserted, 0))
+        if (QtMocHelpers::indexOfMethod<void (DiagramScene::*)(QGraphicsItem * )>(_a, &DiagramScene::itemInserted, 0))
+            return;
+        if (QtMocHelpers::indexOfMethod<void (DiagramScene::*)(Mode )>(_a, &DiagramScene::modeChanged, 1))
             return;
     }
 }
@@ -98,21 +141,27 @@ int DiagramScene::qt_metacall(QMetaObject::Call _c, int _id, void **_a)
     if (_id < 0)
         return _id;
     if (_c == QMetaObject::InvokeMetaMethod) {
-        if (_id < 1)
+        if (_id < 2)
             qt_static_metacall(this, _c, _id, _a);
-        _id -= 1;
+        _id -= 2;
     }
     if (_c == QMetaObject::RegisterMethodArgumentMetaType) {
-        if (_id < 1)
-            *reinterpret_cast<QMetaType *>(_a[0]) = QMetaType();
-        _id -= 1;
+        if (_id < 2)
+            qt_static_metacall(this, _c, _id, _a);
+        _id -= 2;
     }
     return _id;
 }
 
 // SIGNAL 0
-void DiagramScene::itemInserted()
+void DiagramScene::itemInserted(QGraphicsItem * _t1)
 {
-    QMetaObject::activate(this, &staticMetaObject, 0, nullptr);
+    QMetaObject::activate<void>(this, &staticMetaObject, 0, nullptr, _t1);
+}
+
+// SIGNAL 1
+void DiagramScene::modeChanged(Mode _t1)
+{
+    QMetaObject::activate<void>(this, &staticMetaObject, 1, nullptr, _t1);
 }
 QT_WARNING_POP
