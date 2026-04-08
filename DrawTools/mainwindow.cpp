@@ -862,28 +862,50 @@ void MainWindow::exportPdf()
         return;
     }
 
+    constexpr int sceneDpi = 96;
+    constexpr int exportDpi = 300;
+
     QPdfWriter writer(path);
-    writer.setResolution(300);
+    writer.setResolution(exportDpi);
     writer.setPageSize(QPageSize(m_pageSizeId));
     writer.setPageOrientation(m_pageOrientation);
-    writer.setPageMargins(QMarginsF(10, 10, 10, 10), QPageLayout::Millimeter);
+    writer.setPageMargins(QMarginsF(0, 0, 0, 0), QPageLayout::Millimeter);
 
-    QPainter painter(&writer);
-    painter.setRenderHint(QPainter::Antialiasing, true);
-    painter.setRenderHint(QPainter::TextAntialiasing, true);
-    painter.setRenderHint(QPainter::SmoothPixmapTransform, true);
-
-    const QRect pageRect = writer.pageLayout().paintRectPixels(writer.resolution());
+    const QRect pageRect = writer.pageLayout().fullRectPixels(writer.resolution());
     if (pageRect.width() <= 0 || pageRect.height() <= 0) {
         QMessageBox::critical(this, "Export PDF", "Invalid page layout.");
         return;
     }
 
-    // WYSIWYG export: map the configured scene page directly to the PDF paint rect.
-    scene->render(&painter,
-                  QRectF(pageRect),
-                  pageSource,
-                  Qt::KeepAspectRatio);
+    // Render page as seen on canvas into a high-resolution image first.
+    const qreal scale = static_cast<qreal>(exportDpi) / static_cast<qreal>(sceneDpi);
+    const QSize imageSize(qMax(1, qRound(pageSource.width() * scale)),
+                          qMax(1, qRound(pageSource.height() * scale)));
+    QImage pageImage(imageSize, QImage::Format_ARGB32_Premultiplied);
+    pageImage.fill(Qt::white);
+
+    // Hide selection handles/borders during export.
+    const auto selected = scene->selectedItems();
+    for (auto *it : selected) it->setSelected(false);
+
+    {
+        QPainter imgPainter(&pageImage);
+        imgPainter.setRenderHint(QPainter::Antialiasing, true);
+        imgPainter.setRenderHint(QPainter::TextAntialiasing, true);
+        imgPainter.setRenderHint(QPainter::SmoothPixmapTransform, true);
+        scene->render(&imgPainter,
+                      QRectF(0, 0, imageSize.width(), imageSize.height()),
+                      pageSource,
+                      Qt::KeepAspectRatio);
+    }
+
+    for (auto *it : selected) it->setSelected(true);
+
+    QPainter painter(&writer);
+    painter.setRenderHint(QPainter::Antialiasing, true);
+    painter.setRenderHint(QPainter::TextAntialiasing, true);
+    painter.setRenderHint(QPainter::SmoothPixmapTransform, true);
+    painter.drawImage(QRectF(pageRect), pageImage);
     painter.end();
 
     statusBar()->showMessage("Exported PDF: " + QFileInfo(path).fileName(), 3000);
