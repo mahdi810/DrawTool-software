@@ -97,6 +97,14 @@ build CMakeFiles/DrawTools.dir/symbollibrary.cpp.obj: CXX_COMPILER__DrawTools_un
   OBJECT_DIR = CMakeFiles\DrawTools.dir
   OBJECT_FILE_DIR = CMakeFiles\DrawTools.dir
 
+build CMakeFiles/DrawTools.dir/filemanager.cpp.obj: CXX_COMPILER__DrawTools_unscanned_Debug C$:/HOME/HochschuleBremerhaven2025/qt$ programs/DrawTools/filemanager.cpp || cmake_object_order_depends_target_DrawTools
+  DEFINES = -DMINGW_HAS_SECURE_API=1 -DQT_CORE_LIB -DQT_GUI_LIB -DQT_NEEDS_QMAIN -DQT_QML_DEBUG -DQT_WIDGETS_LIB -DUNICODE -DWIN32 -DWIN64 -D_ENABLE_EXTENDED_ALIGNED_STORAGE -D_UNICODE -D_WIN64
+  DEP_FILE = CMakeFiles\DrawTools.dir\filemanager.cpp.obj.d
+  FLAGS = -g -std=gnu++17 -fdiagnostics-color=always
+  INCLUDES = -I"C:/HOME/HochschuleBremerhaven2025/qt programs/DrawTools/build/Desktop_Qt_6_11_0_MinGW_64_bit-Debug/DrawTools_autogen/include" -isystem C:/Qt/6.11.0/mingw_64/include/QtCore -isystem C:/Qt/6.11.0/mingw_64/include -isystem C:/Qt/6.11.0/mingw_64/mkspecs/win32-g++ -isystem C:/Qt/6.11.0/mingw_64/include/QtWidgets -isystem C:/Qt/6.11.0/mingw_64/include/QtGui
+  OBJECT_DIR = CMakeFiles\DrawTools.dir
+  OBJECT_FILE_DIR = CMakeFiles\DrawTools.dir
+
 
 # =============================================================================
 # Link build statements for EXECUTABLE target DrawTools
@@ -105,7 +113,7 @@ build CMakeFiles/DrawTools.dir/symbollibrary.cpp.obj: CXX_COMPILER__DrawTools_un
 #############################################
 # Link the executable DrawTools.exe
 
-build DrawTools.exe: CXX_EXECUTABLE_LINKER__DrawTools_Debug CMakeFiles/DrawTools.dir/DrawTools_autogen/mocs_compilation.cpp.obj CMakeFiles/DrawTools.dir/main.cpp.obj CMakeFiles/DrawTools.dir/mainwindow.cpp.obj CMakeFiles/DrawTools.dir/diagramscene.cpp.obj CMakeFiles/DrawTools.dir/diagramview.cpp.obj CMakeFiles/DrawTools.dir/symbollibrary.cpp.obj | C$:/Qt/6.11.0/mingw_64/lib/libQt6Widgets.a C$:/Qt/6.11.0/mingw_64/lib/libQt6Gui.a C$:/Qt/6.11.0/mingw_64/lib/libQt6Core.a C$:/Qt/6.11.0/mingw_64/lib/libQt6EntryPoint.a || DrawTools_autogen DrawTools_autogen_timestamp_deps
+build DrawTools.exe: CXX_EXECUTABLE_LINKER__DrawTools_Debug CMakeFiles/DrawTools.dir/DrawTools_autogen/mocs_compilation.cpp.obj CMakeFiles/DrawTools.dir/main.cpp.obj CMakeFiles/DrawTools.dir/mainwindow.cpp.obj CMakeFiles/DrawTools.dir/diagramscene.cpp.obj CMakeFiles/DrawTools.dir/diagramview.cpp.obj CMakeFiles/DrawTools.dir/symbollibrary.cpp.obj CMakeFiles/DrawTools.dir/filemanager.cpp.obj | C$:/Qt/6.11.0/mingw_64/lib/libQt6Widgets.a C$:/Qt/6.11.0/mingw_64/lib/libQt6Gui.a C$:/Qt/6.11.0/mingw_64/lib/libQt6Core.a C$:/Qt/6.11.0/mingw_64/lib/libQt6EntryPoint.a || DrawTools_autogen DrawTools_autogen_timestamp_deps
   FLAGS = -g
   LINK_FLAGS = -mwindows
   LINK_LIBRARIES = C:/Qt/6.11.0/mingw_64/lib/libQt6Widgets.a  C:/Qt/6.11.0/mingw_64/lib/libQt6Gui.a  C:/Qt/6.11.0/mingw_64/lib/libQt6Core.a  -lmpr  -luserenv  -lmingw32  C:/Qt/6.11.0/mingw_64/lib/libQt6EntryPoint.a  -lshell32  -ld3d11  -ldxgi  -ldxguid  -ld3d12  -lkernel32 -luser32 -lgdi32 -lwinspool -lshell32 -lole32 -loleaut32 -luuid -lcomdlg32 -ladvapi32

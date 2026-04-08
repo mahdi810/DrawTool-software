@@ -2,6 +2,7 @@
 #include "diagramview.h"
 #include "symbollibrary.h"
 #include "commands.h"
+#include "filemanager.h"
 
 #include <QAction>
 #include <QActionGroup>
@@ -14,6 +15,8 @@
 #include <QLabel>
 #include <QPainter>
 #include <QGraphicsItem>
+#include <QFileDialog>
+#include <QFileInfo>
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -50,15 +53,21 @@ void MainWindow::setTool(DiagramScene::Mode mode)
 
 void MainWindow::createActions()
 {
-    // File
+    // ── File ──────────────────────────────────────
     newAction    = new QAction("&New",        this); newAction->setShortcut(QKeySequence::New);
     openAction   = new QAction("&Open...",    this); openAction->setShortcut(QKeySequence::Open);
     saveAction   = new QAction("&Save",       this); saveAction->setShortcut(QKeySequence::Save);
     saveAsAction = new QAction("Save &As...", this);
     exitAction   = new QAction("E&xit",       this); exitAction->setShortcut(QKeySequence::Quit);
-    connect(exitAction, &QAction::triggered, this, &QWidget::close);
 
-    // Edit — undo/redo wired to the scene's undo stack
+    // ← THE 4 MISSING CONNECTS
+    connect(newAction,    &QAction::triggered, this, &MainWindow::newDiagram);
+    connect(openAction,   &QAction::triggered, this, &MainWindow::openDiagram);
+    connect(saveAction,   &QAction::triggered, this, &MainWindow::saveDiagram);
+    connect(saveAsAction, &QAction::triggered, this, &MainWindow::saveDiagramAs);
+    connect(exitAction,   &QAction::triggered, this, &QWidget::close);
+
+    // ── Edit ──────────────────────────────────────
     undoAction = new QAction("&Undo", this);
     undoAction->setShortcut(QKeySequence::Undo);
     undoAction->setEnabled(false);
@@ -80,7 +89,7 @@ void MainWindow::createActions()
     saveSymbolAction = new QAction("&Save Selection as Symbol", this);
     connect(saveSymbolAction, &QAction::triggered, this, &MainWindow::saveSelectionAsSymbol);
 
-    // View
+    // ── View ──────────────────────────────────────
     zoomInAction    = new QAction("Zoom &In",    this);
     zoomInAction->setShortcut(QKeySequence(Qt::CTRL | Qt::Key_Plus));
     zoomOutAction   = new QAction("Zoom &Out",   this);
@@ -97,7 +106,7 @@ void MainWindow::createActions()
     toggleGridAction->setChecked(true);
     connect(toggleGridAction, &QAction::toggled, scene, &DiagramScene::setGridVisible);
 
-    // Tools
+    // ── Tools ─────────────────────────────────────
     toolGroup = new QActionGroup(this);
     toolGroup->setExclusive(true);
 
@@ -132,7 +141,7 @@ void MainWindow::createActions()
     connect(insertTextAction, &QAction::triggered, this,
             [this]() { setTool(DiagramScene::InsertTextMode); });
 
-    // Help
+    // ── Help ──────────────────────────────────────
     aboutAction = new QAction("&About", this);
     connect(aboutAction, &QAction::triggered, this, [this]() {
         QMessageBox::about(this, "DrawTools",
@@ -256,4 +265,76 @@ void MainWindow::onSymbolActivated(int index)
     scene->setCurrentSymbol(symbolLibrary->symbolAt(index).thumbnail);
     setTool(DiagramScene::InsertSymbolMode);
     statusBar()->showMessage("Click on canvas to place symbol.");
+}
+
+// ── File operations ───────────────────────────────
+
+void MainWindow::newDiagram()
+{
+    if (!scene->items().isEmpty()) {
+        auto btn = QMessageBox::question(this, "New Diagram",
+                                         "Discard current diagram and start fresh?",
+                                         QMessageBox::Yes | QMessageBox::No);
+        if (btn != QMessageBox::Yes) return;
+    }
+    scene->clear();
+    scene->undoStack()->clear();
+    m_currentFile.clear();
+    setWindowTitle("DrawTools — New Diagram");
+    statusBar()->showMessage("New diagram created.");
+}
+
+void MainWindow::openDiagram()
+{
+    QString path = QFileDialog::getOpenFileName(
+        this, "Open Diagram", QString(),
+        "DrawTools Files (*.dtj);;JSON Files (*.json);;All Files (*)");
+    if (path.isEmpty()) return;
+
+    if (!FileManager::load(scene, path)) {
+        QMessageBox::critical(this, "Open Failed",
+                              "Could not read file:\n" + path);
+        return;
+    }
+
+    scene->undoStack()->clear();
+    m_currentFile = path;
+    setWindowTitle("DrawTools — " + QFileInfo(path).fileName());
+    statusBar()->showMessage("Opened: " + path);
+}
+
+void MainWindow::saveDiagram()
+{
+    if (m_currentFile.isEmpty()) {
+        saveDiagramAs();
+        return;
+    }
+
+    if (!FileManager::save(scene, m_currentFile)) {
+        QMessageBox::critical(this, "Save Failed",
+                              "Could not write file:\n" + m_currentFile);
+        return;
+    }
+    statusBar()->showMessage("Saved: " + m_currentFile);
+}
+
+void MainWindow::saveDiagramAs()
+{
+    QString path = QFileDialog::getSaveFileName(
+        this, "Save Diagram As", QString(),
+        "DrawTools Files (*.dtj);;JSON Files (*.json);;All Files (*)");
+    if (path.isEmpty()) return;
+
+    if (!path.endsWith(".dtj") && !path.endsWith(".json"))
+        path += ".dtj";
+
+    if (!FileManager::save(scene, path)) {
+        QMessageBox::critical(this, "Save Failed",
+                              "Could not write file:\n" + path);
+        return;
+    }
+
+    m_currentFile = path;
+    setWindowTitle("DrawTools — " + QFileInfo(path).fileName());
+    statusBar()->showMessage("Saved: " + path);
 }

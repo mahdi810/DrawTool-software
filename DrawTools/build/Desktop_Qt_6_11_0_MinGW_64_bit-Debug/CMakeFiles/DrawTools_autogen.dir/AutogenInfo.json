@@ -353,6 +353,12 @@
 			null
 		],
 		[
+			"C:/HOME/HochschuleBremerhaven2025/qt programs/DrawTools/filemanager.h",
+			"MU",
+			"EWIEGA46WW/moc_filemanager.cpp",
+			null
+		],
+		[
 			"C:/HOME/HochschuleBremerhaven2025/qt programs/DrawTools/mainwindow.h",
 			"MU",
 			"EWIEGA46WW/moc_mainwindow.cpp",
@@ -444,6 +450,11 @@
 		],
 		[
 			"C:/HOME/HochschuleBremerhaven2025/qt programs/DrawTools/diagramview.cpp",
+			"MU",
+			null
+		],
+		[
+			"C:/HOME/HochschuleBremerhaven2025/qt programs/DrawTools/filemanager.cpp",
 			"MU",
 			null
 		],

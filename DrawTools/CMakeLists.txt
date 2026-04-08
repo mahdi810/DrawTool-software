@@ -29,6 +29,8 @@ if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
     qt_add_executable(DrawTools
         MANUAL_FINALIZATION
         ${PROJECT_SOURCES}
+        filemanager.h
+        filemanager.cpp
     )
 else()
     if(ANDROID)

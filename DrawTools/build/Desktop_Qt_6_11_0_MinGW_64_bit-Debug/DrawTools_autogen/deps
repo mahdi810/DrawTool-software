@@ -12,6 +12,8 @@ DrawTools_autogen/timestamp: \
 	C:/HOME/HochschuleBremerhaven2025/qt\ programs/DrawTools/diagramscene.h \
 	C:/HOME/HochschuleBremerhaven2025/qt\ programs/DrawTools/diagramview.cpp \
 	C:/HOME/HochschuleBremerhaven2025/qt\ programs/DrawTools/diagramview.h \
+	C:/HOME/HochschuleBremerhaven2025/qt\ programs/DrawTools/filemanager.cpp \
+	C:/HOME/HochschuleBremerhaven2025/qt\ programs/DrawTools/filemanager.h \
 	C:/HOME/HochschuleBremerhaven2025/qt\ programs/DrawTools/main.cpp \
 	C:/HOME/HochschuleBremerhaven2025/qt\ programs/DrawTools/mainwindow.cpp \
 	C:/HOME/HochschuleBremerhaven2025/qt\ programs/DrawTools/mainwindow.h \
