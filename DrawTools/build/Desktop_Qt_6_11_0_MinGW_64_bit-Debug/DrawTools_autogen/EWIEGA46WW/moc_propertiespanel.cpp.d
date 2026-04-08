@@ -2,6 +2,8 @@ C:/HOME/HochschuleBremerhaven2025/qt\ programs/DrawTools/build/Desktop_Qt_6_11_0
   C:/HOME/HochschuleBremerhaven2025/qt\ programs/DrawTools/build/Desktop_Qt_6_11_0_MinGW_64_bit-Debug/DrawTools_autogen/moc_predefs.h \
   C:/HOME/HochschuleBremerhaven2025/qt\ programs/DrawTools/arrowitem.h \
   C:/HOME/HochschuleBremerhaven2025/qt\ programs/DrawTools/diagramscene.h \
+  C:/Qt/6.11.0/mingw_64/include/QtCore/QList \
+  C:/Qt/6.11.0/mingw_64/include/QtCore/QPointF \
   C:/Qt/6.11.0/mingw_64/include/QtCore/QVector \
   C:/Qt/6.11.0/mingw_64/include/QtCore/q17memory.h \
   C:/Qt/6.11.0/mingw_64/include/QtCore/q20bit.h \

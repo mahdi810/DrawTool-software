@@ -30,6 +30,7 @@ DrawTools_autogen/timestamp: \
 	C:/HOME/HochschuleBremerhaven2025/qt\ programs/DrawTools/symbollibrary.cpp \
 	C:/HOME/HochschuleBremerhaven2025/qt\ programs/DrawTools/symbollibrary.h \
 	C:/Qt/6.11.0/mingw_64/include/QtCore/QList \
+	C:/Qt/6.11.0/mingw_64/include/QtCore/QPointF \
 	C:/Qt/6.11.0/mingw_64/include/QtCore/QString \
 	C:/Qt/6.11.0/mingw_64/include/QtCore/QVector \
 	C:/Qt/6.11.0/mingw_64/include/QtCore/q17memory.h \
@@ -399,6 +400,15 @@ DrawTools_autogen/timestamp: \
 	C:/Qt/6.11.0/mingw_64/lib/cmake/Qt6WidgetsTools/Qt6WidgetsToolsTargets.cmake \
 	C:/Qt/6.11.0/mingw_64/lib/cmake/Qt6WidgetsTools/Qt6WidgetsToolsTargetsPrecheck.cmake \
 	C:/Qt/6.11.0/mingw_64/lib/cmake/Qt6WidgetsTools/Qt6WidgetsToolsVersionlessTargets.cmake \
+	C:/Qt/6.11.0/mingw_64/lib/cmake/Qt6Xml/Qt6XmlAdditionalTargetInfo.cmake \
+	C:/Qt/6.11.0/mingw_64/lib/cmake/Qt6Xml/Qt6XmlConfig.cmake \
+	C:/Qt/6.11.0/mingw_64/lib/cmake/Qt6Xml/Qt6XmlConfigVersion.cmake \
+	C:/Qt/6.11.0/mingw_64/lib/cmake/Qt6Xml/Qt6XmlConfigVersionImpl.cmake \
+	C:/Qt/6.11.0/mingw_64/lib/cmake/Qt6Xml/Qt6XmlDependencies.cmake \
+	C:/Qt/6.11.0/mingw_64/lib/cmake/Qt6Xml/Qt6XmlTargets-relwithdebinfo.cmake \
+	C:/Qt/6.11.0/mingw_64/lib/cmake/Qt6Xml/Qt6XmlTargets.cmake \
+	C:/Qt/6.11.0/mingw_64/lib/cmake/Qt6Xml/Qt6XmlTargetsPrecheck.cmake \
+	C:/Qt/6.11.0/mingw_64/lib/cmake/Qt6Xml/Qt6XmlVersionlessAliasTargets.cmake \
 	C:/Qt/Tools/CMake_64/share/cmake-3.30/Modules/CMakeCXXInformation.cmake \
 	C:/Qt/Tools/CMake_64/share/cmake-3.30/Modules/CMakeCheckCompilerFlagCommonPatterns.cmake \
 	C:/Qt/Tools/CMake_64/share/cmake-3.30/Modules/CMakeCommonLanguageInclude.cmake \

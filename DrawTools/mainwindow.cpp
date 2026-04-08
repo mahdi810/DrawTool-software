@@ -8,6 +8,9 @@
 
 #include <QAction>
 #include <QActionGroup>
+#include <QIcon>
+#include <QEvent>
+#include <QPalette>
 #include <QMenuBar>
 #include <QToolBar>
 #include <QStatusBar>
@@ -36,6 +39,7 @@
 #include <QSvgRenderer>
 #include <QDir>
 #include <QImage>
+#include <QDomDocument>
 #include <algorithm>
 
 static constexpr int kEquationRenderDpi = 1200;
@@ -74,6 +78,95 @@ static QString latexCommandToHtmlEntity(const QString &cmd)
             return QString::fromLatin1(entry.second);
     }
     return QString();
+}
+
+static QColor toolIconColor(const QWidget *w)
+{
+    if (!w) return QColor(40, 40, 40);
+    QColor c = w->palette().color(QPalette::WindowText);
+    if (!c.isValid()) c = QColor(40, 40, 40);
+    return c;
+}
+
+static QIcon makeRectToolIcon(const QColor &color)
+{
+    QPixmap px(24, 24);
+    px.fill(Qt::transparent);
+    QPainter p(&px);
+    p.setRenderHint(QPainter::Antialiasing, true);
+    p.setPen(QPen(color, 2));
+    p.setBrush(Qt::NoBrush);
+    p.drawRect(QRectF(4, 6, 16, 12));
+    return QIcon(px);
+}
+
+static QIcon makeEllipseToolIcon(const QColor &color)
+{
+    QPixmap px(24, 24);
+    px.fill(Qt::transparent);
+    QPainter p(&px);
+    p.setRenderHint(QPainter::Antialiasing, true);
+    p.setPen(QPen(color, 2));
+    p.setBrush(Qt::NoBrush);
+    p.drawEllipse(QRectF(4, 6, 16, 12));
+    return QIcon(px);
+}
+
+static QIcon makeLineToolIcon(const QColor &color)
+{
+    QPixmap px(24, 24);
+    px.fill(Qt::transparent);
+    QPainter p(&px);
+    p.setRenderHint(QPainter::Antialiasing, true);
+    p.setPen(QPen(color, 2, Qt::SolidLine, Qt::RoundCap));
+    p.drawLine(QPointF(4, 18), QPointF(20, 6));
+    return QIcon(px);
+}
+
+static QIcon makeArrowToolIcon(const QColor &color)
+{
+    QPixmap px(24, 24);
+    px.fill(Qt::transparent);
+    QPainter p(&px);
+    p.setRenderHint(QPainter::Antialiasing, true);
+    p.setPen(QPen(color, 2, Qt::SolidLine, Qt::RoundCap));
+    const QPointF start(4, 18), end(19, 8);
+    p.drawLine(start, end);
+
+    QLineF l(start, end);
+    const double angle = std::atan2(-l.dy(), l.dx());
+    const double a1 = angle + M_PI / 6.0;
+    const double a2 = angle - M_PI / 6.0;
+    const QPointF p1 = end - QPointF(std::cos(a1) * 6.0, -std::sin(a1) * 6.0);
+    const QPointF p2 = end - QPointF(std::cos(a2) * 6.0, -std::sin(a2) * 6.0);
+    p.setBrush(color);
+    p.drawPolygon(QPolygonF() << end << p1 << p2);
+    return QIcon(px);
+}
+
+static QIcon makeJunctionDotToolIcon(const QColor &color)
+{
+    QPixmap px(24, 24);
+    px.fill(Qt::transparent);
+    QPainter p(&px);
+    p.setRenderHint(QPainter::Antialiasing, true);
+    p.setPen(QPen(color, 1.5));
+    p.setBrush(color);
+    p.drawEllipse(QRectF(9, 9, 6, 6));
+    return QIcon(px);
+}
+
+static QIcon makeTextToolIcon(const QColor &color)
+{
+    QPixmap px(24, 24);
+    px.fill(Qt::transparent);
+    QPainter p(&px);
+    p.setRenderHint(QPainter::Antialiasing, true);
+    QFont f("Times New Roman", 15, QFont::Bold);
+    p.setFont(f);
+    p.setPen(color);
+    p.drawText(QRectF(2, 1, 20, 22), Qt::AlignCenter, "T");
+    return QIcon(px);
 }
 
 static QString parseLatexCore(const QString &src, int &i, bool stopOnBrace);
@@ -424,9 +517,25 @@ static bool renderLatexWithEngine(const QString &latex, QPixmap &pixmap, QByteAr
         }
     }
 
+    if (!pdftocairoExe.isEmpty()) {
+        runProcessChecked(pdftocairoExe,
+                          {"-svg", "-f", "1", "-l", "1", pdfForConversion, svgPath},
+                          tmp.path(),
+                          convertLog,
+                          30000);
+        if (QFile::exists(svgPath)) {
+            QFile sf(svgPath);
+            if (sf.open(QIODevice::ReadOnly)) {
+                svgData = sf.readAll();
+                sf.close();
+            }
+            if (!svgData.isEmpty()) return true;
+        }
+    }
+
     if (!dvisvgmExe.isEmpty()) {
         runProcessChecked(dvisvgmExe,
-                          {"--pdf", "--page=1", "--bbox=min", "--exact-bbox", "--no-fonts", "-o", svgPath, pdfForConversion},
+                          {"--pdf", "--page=1", "--bbox=min", "--exact-bbox", "-o", svgPath, pdfForConversion},
                           tmp.path(),
                           convertLog,
                           30000);
@@ -486,10 +595,6 @@ MainWindow::MainWindow(QWidget *parent)
     statusBar()->addPermanentWidget(m_zoomLabel);
     statusBar()->showMessage("Ready  |  Ctrl+Wheel: Zoom  |  Middle Mouse: Pan");
 
-    connect(scene, &DiagramScene::itemInserted, this, [this]() {
-        setTool(DiagramScene::SelectMode);
-        selectAction->setChecked(true);
-    });
     connect(view, &DiagramView::mouseMoved, this, [this](const QPointF &p) {
         m_coordLabel->setText(QString("  x: %1  y: %2  ")
                                   .arg(qRound(p.x())).arg(qRound(p.y())));
@@ -503,6 +608,14 @@ MainWindow::MainWindow(QWidget *parent)
 }
 
 MainWindow::~MainWindow() {}
+
+void MainWindow::changeEvent(QEvent *event)
+{
+    QMainWindow::changeEvent(event);
+    if (event->type() == QEvent::PaletteChange || event->type() == QEvent::ApplicationPaletteChange) {
+        updateToolIcons();
+    }
+}
 
 void MainWindow::closeEvent(QCloseEvent *event)
 {
@@ -541,6 +654,11 @@ void MainWindow::setTool(DiagramScene::Mode mode)
     view->setDragMode(mode == DiagramScene::SelectMode
                           ? QGraphicsView::RubberBandDrag
                           : QGraphicsView::NoDrag);
+    view->viewport()->setCursor(mode == DiagramScene::SelectMode ? Qt::ArrowCursor : Qt::CrossCursor);
+    if (propertiesPanel && propertiesPanel->isHidden()) {
+        propertiesPanel->show();
+        propertiesPanel->raise();
+    }
     propertiesPanel->onModeChanged(mode);
 }
 
@@ -622,6 +740,9 @@ void MainWindow::createActions()
     resetZoomAction = new QAction("&Reset Zoom", this); resetZoomAction->setShortcut(Qt::CTRL | Qt::Key_0);
     toggleGridAction= new QAction("Show &Grid",  this); toggleGridAction->setCheckable(true); toggleGridAction->setChecked(true);
     toggleGridAction->setShortcut(QKeySequence(Qt::CTRL | Qt::ALT | Qt::Key_G));
+    toggleSymbolLibraryAction = new QAction("Show &Symbol Library", this);
+    toggleSymbolLibraryAction->setCheckable(true);
+    toggleSymbolLibraryAction->setChecked(false);
 
     connect(zoomInAction,    &QAction::triggered, this, [this](){ view->scale(1.2,1.2); updateStatusBar(); });
     connect(zoomOutAction,   &QAction::triggered, this, [this](){ view->scale(1.0/1.2,1.0/1.2); updateStatusBar(); });
@@ -640,15 +761,28 @@ void MainWindow::createActions()
     selectAction        = makeTool("Select",    DiagramScene::SelectMode);
     insertRectAction    = makeTool("Rectangle", DiagramScene::InsertRectMode);
     insertEllipseAction = makeTool("Ellipse",   DiagramScene::InsertEllipseMode);
-    insertLineAction    = makeTool("Line",       DiagramScene::InsertLineMode);
-    insertArrowAction   = makeTool("Arrow",      DiagramScene::InsertArrowMode);
+    insertLineAction    = makeTool("Wire",       DiagramScene::InsertLineMode);
+    insertDotAction     = makeTool("Junction Dot", DiagramScene::InsertJunctionDotMode);
     insertTextAction    = makeTool("Text",       DiagramScene::InsertTextMode);
+
+    updateToolIcons();
+
     selectAction->setChecked(true);
 
     aboutAction = new QAction("&About", this);
     connect(aboutAction, &QAction::triggered, this, [this](){
         QMessageBox::about(this,"DrawTools","DrawTools — Diagram Editor\n\nCtrl+Z/Y Undo/Redo\nCtrl+Wheel Zoom\nMiddle Mouse Pan");
     });
+}
+
+void MainWindow::updateToolIcons()
+{
+    const QColor c = toolIconColor(this);
+    if (insertRectAction)    insertRectAction->setIcon(makeRectToolIcon(c));
+    if (insertEllipseAction) insertEllipseAction->setIcon(makeEllipseToolIcon(c));
+    if (insertLineAction)    insertLineAction->setIcon(makeLineToolIcon(c));
+    if (insertDotAction)     insertDotAction->setIcon(makeJunctionDotToolIcon(c));
+    if (insertTextAction)    insertTextAction->setIcon(makeTextToolIcon(c));
 }
 
 void MainWindow::createMenus()
@@ -687,6 +821,7 @@ void MainWindow::createMenus()
     viewMenu->addAction(zoomInAction); viewMenu->addAction(zoomOutAction);
     viewMenu->addAction(resetZoomAction); viewMenu->addSeparator();
     viewMenu->addAction(toggleGridAction);
+    viewMenu->addAction(toggleSymbolLibraryAction);
 
     menuBar()->addMenu("&Help")->addAction(aboutAction);
 }
@@ -704,7 +839,8 @@ void MainWindow::createToolBars()
     tb->addWidget(new QLabel(" Tool: "));
     tb->addAction(selectAction); tb->addSeparator();
     tb->addAction(insertRectAction); tb->addAction(insertEllipseAction);
-    tb->addAction(insertLineAction); tb->addAction(insertArrowAction);
+    tb->addAction(insertLineAction);
+    tb->addAction(insertDotAction);
     tb->addAction(insertTextAction);
     tb->addSeparator(); tb->addWidget(new QLabel(" Grid: "));
     gridSpinBox = new QSpinBox(this);
@@ -730,11 +866,22 @@ void MainWindow::createDocks()
     addDockWidget(Qt::RightDockWidgetArea, symbolLibrary);
     connect(symbolLibrary, &SymbolLibrary::symbolActivated,
             this, &MainWindow::onSymbolActivated);
+    connect(toggleSymbolLibraryAction, &QAction::toggled, this, [this](bool show) {
+        if (!symbolLibrary) return;
+        symbolLibrary->setVisible(show);
+        if (show) symbolLibrary->raise();
+    });
+    connect(symbolLibrary, &QDockWidget::visibilityChanged,
+            toggleSymbolLibraryAction, &QAction::setChecked);
+    symbolLibrary->hide();
 
     propertiesPanel = new PropertiesPanel(scene, this);
     addDockWidget(Qt::LeftDockWidgetArea, propertiesPanel);
     connect(scene, &DiagramScene::modeChanged,
             propertiesPanel, &PropertiesPanel::onModeChanged);
+
+    // Start with properties panel hidden; it appears when user picks a tool.
+    propertiesPanel->hide();
 }
 
 void MainWindow::newDiagram()
@@ -836,16 +983,96 @@ void MainWindow::exportPng()
 {
     QString path = QFileDialog::getSaveFileName(this,"Export PNG",{},"PNG (*.png)");
     if (path.isEmpty()) return;
-    if (!path.endsWith(".png")) path += ".png";
-    QRectF bounds = scene->itemsBoundingRect().adjusted(-20,-20,20,20);
-    if (!bounds.isValid() || bounds.isEmpty()) {
-        QMessageBox::warning(this, "Export PNG", "Nothing to export.");
+    if (!path.endsWith(".png", Qt::CaseInsensitive)) path += ".png";
+
+    const QRectF pageSource = scene->pageRect();
+    if (!pageSource.isValid() || pageSource.isEmpty()) {
+        QMessageBox::critical(this, "Export PNG", "Invalid page bounds.");
         return;
     }
-    QImage img(bounds.size().toSize(), QImage::Format_ARGB32);
+
+    constexpr int exportDpi = 300;
+    QPageSize pageSize(m_pageSizeId);
+    QSizeF mm = pageSize.size(QPageSize::Millimeter);
+    if (m_pageOrientation == QPageLayout::Landscape) {
+        mm = QSizeF(mm.height(), mm.width());
+    }
+
+    const int w = qMax(1, qRound((mm.width()  / 25.4) * exportDpi));
+    const int h = qMax(1, qRound((mm.height() / 25.4) * exportDpi));
+    QImage img(QSize(w, h), QImage::Format_ARGB32_Premultiplied);
     img.fill(Qt::white);
-    QPainter p(&img); p.setRenderHint(QPainter::Antialiasing);
-    scene->render(&p, QRectF(), bounds); p.end();
+
+    const auto selected = scene->selectedItems();
+    for (auto *it : selected) it->setSelected(false);
+
+    QList<ResizableEquationItem *> vectorEquationItems;
+    QList<ResizableEquationItem *> rasterEquationItems;
+    const auto allItems = scene->items(Qt::AscendingOrder);
+    for (auto *it : allItems) {
+        if (auto *eq = dynamic_cast<ResizableEquationItem *>(it)) {
+            if (eq->hasSvgData()) vectorEquationItems.append(eq);
+            else                  rasterEquationItems.append(eq);
+            eq->setVisible(false);
+        }
+    }
+
+    QPainter p(&img);
+    p.setRenderHint(QPainter::Antialiasing, true);
+    p.setRenderHint(QPainter::TextAntialiasing, true);
+    p.setRenderHint(QPainter::SmoothPixmapTransform, true);
+    scene->render(&p,
+                  QRectF(0, 0, w, h),
+                  pageSource,
+                  Qt::KeepAspectRatio);
+
+    const qreal sx = static_cast<qreal>(w) / pageSource.width();
+    const qreal sy = static_cast<qreal>(h) / pageSource.height();
+    auto mapSceneToPng = [&](const QRectF &r) {
+        return QRectF((r.left() - pageSource.left()) * sx,
+                      (r.top() - pageSource.top()) * sy,
+                      r.width() * sx,
+                      r.height() * sy);
+    };
+
+    for (auto *eq : vectorEquationItems) {
+        if (!eq || !eq->hasSvgData()) continue;
+
+        const QSizeF base = eq->baseSize();
+        if (base.width() <= 0.0 || base.height() <= 0.0) continue;
+
+        const QRectF sceneRect = eq->sceneTransform().mapRect(QRectF(QPointF(0, 0), base));
+        if (!sceneRect.isValid() || sceneRect.isEmpty()) continue;
+        if (!sceneRect.intersects(pageSource)) continue;
+
+        const QRectF targetPng = mapSceneToPng(sceneRect);
+        if (!targetPng.isValid() || targetPng.isEmpty()) continue;
+
+        QSvgRenderer renderer(eq->svgData());
+        if (!renderer.isValid()) continue;
+        renderer.render(&p, targetPng);
+    }
+
+    for (auto *eq : rasterEquationItems) {
+        if (!eq) continue;
+        const QRectF sceneRect = eq->sceneBoundingRect();
+        if (!sceneRect.isValid() || sceneRect.isEmpty()) continue;
+        if (!sceneRect.intersects(pageSource)) continue;
+
+        const QPixmap px = eq->fallbackPixmap();
+        if (px.isNull()) continue;
+
+        const QRectF targetPng = mapSceneToPng(sceneRect);
+        p.drawPixmap(targetPng, px, QRectF(px.rect()));
+    }
+
+    p.end();
+
+    for (auto *eq : vectorEquationItems) eq->setVisible(true);
+    for (auto *eq : rasterEquationItems) eq->setVisible(true);
+
+    for (auto *it : selected) it->setSelected(true);
+
     if (!img.save(path))
         QMessageBox::critical(this,"Export Failed","Could not save:\n"+path);
 }
@@ -862,7 +1089,6 @@ void MainWindow::exportPdf()
         return;
     }
 
-    constexpr int sceneDpi = 96;
     constexpr int exportDpi = 300;
 
     QPdfWriter writer(path);
@@ -877,36 +1103,106 @@ void MainWindow::exportPdf()
         return;
     }
 
-    // Render page as seen on canvas into a high-resolution image first.
-    const qreal scale = static_cast<qreal>(exportDpi) / static_cast<qreal>(sceneDpi);
-    const QSize imageSize(qMax(1, qRound(pageSource.width() * scale)),
-                          qMax(1, qRound(pageSource.height() * scale)));
-    QImage pageImage(imageSize, QImage::Format_ARGB32_Premultiplied);
-    pageImage.fill(Qt::white);
-
     // Hide selection handles/borders during export.
     const auto selected = scene->selectedItems();
     for (auto *it : selected) it->setSelected(false);
 
-    {
-        QPainter imgPainter(&pageImage);
-        imgPainter.setRenderHint(QPainter::Antialiasing, true);
-        imgPainter.setRenderHint(QPainter::TextAntialiasing, true);
-        imgPainter.setRenderHint(QPainter::SmoothPixmapTransform, true);
-        scene->render(&imgPainter,
-                      QRectF(0, 0, imageSize.width(), imageSize.height()),
-                      pageSource,
-                      Qt::KeepAspectRatio);
+    QList<ResizableEquationItem *> vectorEquationItems;
+    QList<ResizableEquationItem *> rasterEquationItems;
+    const auto allItems = scene->items(Qt::AscendingOrder);
+    for (auto *it : allItems) {
+        if (auto *eq = dynamic_cast<ResizableEquationItem *>(it)) {
+            if (eq->hasSvgData()) vectorEquationItems.append(eq);
+            else                  rasterEquationItems.append(eq);
+            eq->setVisible(false);
+        }
     }
-
-    for (auto *it : selected) it->setSelected(true);
 
     QPainter painter(&writer);
     painter.setRenderHint(QPainter::Antialiasing, true);
     painter.setRenderHint(QPainter::TextAntialiasing, true);
     painter.setRenderHint(QPainter::SmoothPixmapTransform, true);
-    painter.drawImage(QRectF(pageRect), pageImage);
+    scene->render(&painter,
+                  QRectF(pageRect),
+                  pageSource,
+                  Qt::IgnoreAspectRatio);
+
+    const qreal sx = static_cast<qreal>(pageRect.width()) / pageSource.width();
+    const qreal sy = static_cast<qreal>(pageRect.height()) / pageSource.height();
+    const qreal pxLeft = pageRect.left();
+    const qreal pxTop = pageRect.top();
+
+    auto mapSceneToPdf = [&](const QRectF &r) {
+        return QRectF(pxLeft + (r.left() - pageSource.left()) * sx,
+                      pxTop + (r.top() - pageSource.top()) * sy,
+                      r.width() * sx,
+                      r.height() * sy);
+    };
+
+    for (auto *eq : vectorEquationItems) {
+        if (!eq || !eq->hasSvgData()) continue;
+
+        const QSizeF base = eq->baseSize();
+        if (base.width() <= 0.0 || base.height() <= 0.0) continue;
+
+        const QRectF sceneRect = eq->sceneTransform().mapRect(QRectF(QPointF(0, 0), base));
+        if (!sceneRect.isValid() || sceneRect.isEmpty()) continue;
+        if (!sceneRect.intersects(pageSource)) continue;
+
+        const QRectF targetPdf = mapSceneToPdf(sceneRect);
+        if (!targetPdf.isValid() || targetPdf.isEmpty()) continue;
+
+        QSvgRenderer renderer(eq->svgData());
+        if (!renderer.isValid()) continue;
+
+        // Balance sharpness vs. PDF size/render speed with adaptive supersampling.
+        constexpr int equationTargetDpi = 1200;
+        constexpr int equationMaxEdgePx = 6000;
+        constexpr qint64 equationMaxPixels = 12000000; // ~12 MP per equation image
+        qreal supersample = qMax<qreal>(1.0, static_cast<qreal>(equationTargetDpi) / exportDpi);
+
+        int rw = qBound(1, qRound(targetPdf.width() * supersample), equationMaxEdgePx);
+        int rh = qBound(1, qRound(targetPdf.height() * supersample), equationMaxEdgePx);
+
+        const qint64 pixelCount = static_cast<qint64>(rw) * static_cast<qint64>(rh);
+        if (pixelCount > equationMaxPixels) {
+            const qreal k = qSqrt(static_cast<qreal>(equationMaxPixels) / static_cast<qreal>(pixelCount));
+            rw = qMax(1, qRound(rw * k));
+            rh = qMax(1, qRound(rh * k));
+        }
+        QImage eqImage(QSize(rw, rh), QImage::Format_ARGB32_Premultiplied);
+        eqImage.fill(Qt::transparent);
+
+        {
+            QPainter ip(&eqImage);
+            ip.setRenderHint(QPainter::Antialiasing, true);
+            ip.setRenderHint(QPainter::TextAntialiasing, true);
+            ip.setRenderHint(QPainter::SmoothPixmapTransform, true);
+            renderer.render(&ip, QRectF(0, 0, rw, rh));
+        }
+
+        painter.drawImage(targetPdf, eqImage);
+    }
+
+    for (auto *eq : rasterEquationItems) {
+        if (!eq) continue;
+        const QRectF sceneRect = eq->sceneBoundingRect();
+        if (!sceneRect.isValid() || sceneRect.isEmpty()) continue;
+        if (!sceneRect.intersects(pageSource)) continue;
+
+        const QPixmap px = eq->fallbackPixmap();
+        if (px.isNull()) continue;
+
+        const QRectF targetPdf = mapSceneToPdf(sceneRect);
+        painter.drawPixmap(targetPdf, px, QRectF(px.rect()));
+    }
+
     painter.end();
+
+    for (auto *eq : vectorEquationItems) eq->setVisible(true);
+    for (auto *eq : rasterEquationItems) eq->setVisible(true);
+
+    for (auto *it : selected) it->setSelected(true);
 
     statusBar()->showMessage("Exported PDF: " + QFileInfo(path).fileName(), 3000);
 }
@@ -915,17 +1211,133 @@ void MainWindow::exportSvg()
 {
     QString path = QFileDialog::getSaveFileName(this,"Export SVG",{},"SVG (*.svg)");
     if (path.isEmpty()) return;
-    if (!path.endsWith(".svg")) path += ".svg";
-    QRectF bounds = scene->itemsBoundingRect().adjusted(-20,-20,20,20);
-    if (!bounds.isValid() || bounds.isEmpty()) {
-        QMessageBox::warning(this, "Export SVG", "Nothing to export.");
+    if (!path.endsWith(".svg", Qt::CaseInsensitive)) path += ".svg";
+
+    const QRectF pageSource = scene->pageRect();
+    if (!pageSource.isValid() || pageSource.isEmpty()) {
+        QMessageBox::critical(this, "Export SVG", "Invalid page bounds.");
         return;
     }
+
+    const int w = qMax(1, qCeil(pageSource.width()));
+    const int h = qMax(1, qCeil(pageSource.height()));
+
     QSvgGenerator gen;
-    gen.setFileName(path); gen.setSize(bounds.size().toSize());
-    gen.setViewBox(bounds);
-    QPainter p(&gen); p.setRenderHint(QPainter::Antialiasing);
-    scene->render(&p, bounds, bounds); p.end();
+    gen.setFileName(path);
+    gen.setResolution(96);
+    gen.setSize(QSize(w, h));
+    gen.setViewBox(pageSource.toAlignedRect());
+
+    const auto selected = scene->selectedItems();
+    for (auto *it : selected) it->setSelected(false);
+
+    QList<ResizableEquationItem *> vectorEquationItems;
+    QList<ResizableEquationItem *> rasterEquationItems;
+    const auto allItems = scene->items(Qt::AscendingOrder);
+    for (auto *it : allItems) {
+        if (auto *eq = dynamic_cast<ResizableEquationItem *>(it)) {
+            if (eq->hasSvgData()) vectorEquationItems.append(eq);
+            else                  rasterEquationItems.append(eq);
+            eq->setVisible(false);
+        }
+    }
+
+    QPainter p(&gen);
+    p.setRenderHint(QPainter::Antialiasing, true);
+    p.setRenderHint(QPainter::TextAntialiasing, true);
+    p.setRenderHint(QPainter::SmoothPixmapTransform, true);
+    scene->render(&p,
+                  pageSource,
+                  pageSource,
+                  Qt::IgnoreAspectRatio);
+
+    // Fallback-only equations remain raster if no source SVG data exists.
+    for (auto *eq : rasterEquationItems) {
+        if (!eq) continue;
+
+        const QRectF sceneRect = eq->sceneBoundingRect();
+        if (!sceneRect.isValid() || sceneRect.isEmpty()) continue;
+        if (!sceneRect.intersects(pageSource)) continue;
+
+        const QPixmap sourcePx = eq->fallbackPixmap();
+
+        if (sourcePx.isNull()) continue;
+
+        p.drawPixmap(sceneRect, sourcePx, QRectF(sourcePx.rect()));
+    }
+
+    p.end();
+
+    // Inject SVG-backed equations as nested vector SVG nodes at exact scene coordinates.
+    if (!vectorEquationItems.isEmpty()) {
+        QFile out(path);
+        if (out.open(QIODevice::ReadOnly | QIODevice::Text)) {
+            QDomDocument doc;
+            if (doc.setContent(&out)) {
+                out.close();
+
+                QDomElement root = doc.documentElement();
+                for (auto *eq : vectorEquationItems) {
+                    if (!eq || !eq->hasSvgData()) continue;
+
+                    const QByteArray data = eq->svgData();
+                    if (data.isEmpty()) continue;
+
+                    QDomDocument eqDoc;
+                    const auto parseResult = eqDoc.setContent(data);
+                    if (!parseResult) {
+                        continue;
+                    }
+
+                    const QDomElement eqRoot = eqDoc.documentElement();
+                    if (eqRoot.isNull()) continue;
+
+                    const QSizeF base = eq->baseSize();
+                    if (base.width() <= 0.0 || base.height() <= 0.0) continue;
+
+                    const QRectF targetSceneRect = eq->sceneTransform().mapRect(QRectF(QPointF(0, 0), base));
+                    if (!targetSceneRect.isValid() || targetSceneRect.isEmpty()) continue;
+                    if (!targetSceneRect.intersects(pageSource)) continue;
+
+                    QDomElement nested = doc.createElement("svg");
+                    nested.setAttribute("x", QString::number(targetSceneRect.x(), 'f', 6));
+                    nested.setAttribute("y", QString::number(targetSceneRect.y(), 'f', 6));
+                    nested.setAttribute("width", QString::number(targetSceneRect.width(), 'f', 6));
+                    nested.setAttribute("height", QString::number(targetSceneRect.height(), 'f', 6));
+
+                    const QString vb = eqRoot.attribute("viewBox");
+                    if (!vb.isEmpty()) {
+                        nested.setAttribute("viewBox", vb);
+                    } else {
+                        const QString ew = eqRoot.attribute("width");
+                        const QString eh = eqRoot.attribute("height");
+                        if (!ew.isEmpty() && !eh.isEmpty()) {
+                            nested.setAttribute("viewBox", QString("0 0 %1 %2").arg(ew, eh));
+                        }
+                    }
+
+                    for (QDomNode n = eqRoot.firstChild(); !n.isNull(); n = n.nextSibling()) {
+                        nested.appendChild(doc.importNode(n, true));
+                    }
+
+                    root.appendChild(nested);
+                }
+
+                if (out.open(QIODevice::WriteOnly | QIODevice::Truncate | QIODevice::Text)) {
+                    QTextStream ts(&out);
+                    ts << doc.toString(2);
+                    out.close();
+                }
+            } else {
+                out.close();
+            }
+        }
+    }
+
+    for (auto *eq : vectorEquationItems) eq->setVisible(true);
+    for (auto *eq : rasterEquationItems) eq->setVisible(true);
+
+    for (auto *it : selected) it->setSelected(true);
 }
 
 void MainWindow::deleteSelectedItems()
@@ -1079,6 +1491,7 @@ void MainWindow::insertEquation()
 void MainWindow::onSymbolActivated(int index)
 {
     if (!symbolLibrary->hasSymbolAt(index)) return;
-    scene->setCurrentSymbol(symbolLibrary->symbolAt(index).thumbnail);
+    const Symbol &sym = symbolLibrary->symbolAt(index);
+    scene->setCurrentSymbol(sym.thumbnail, sym.portsNormalized, sym.name);
     setTool(DiagramScene::InsertSymbolMode);
 }

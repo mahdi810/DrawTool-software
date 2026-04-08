@@ -25,6 +25,7 @@ public:
 
 protected:
     void closeEvent(QCloseEvent *event) override;
+    void changeEvent(QEvent *event) override;
 
 private slots:
     // File
@@ -72,6 +73,7 @@ private:
     void createToolBars();
     void createDocks();
     void applyPageSettingsToScene();
+    void updateToolIcons();
     void setTool(DiagramScene::Mode mode);
     bool maybeSave();
 
@@ -109,11 +111,11 @@ private:
     QAction *distributeHAction,  *distributeVAction;
 
     // View
-    QAction *zoomInAction, *zoomOutAction, *resetZoomAction, *toggleGridAction;
+    QAction *zoomInAction, *zoomOutAction, *resetZoomAction, *toggleGridAction, *toggleSymbolLibraryAction;
 
     // Tools
     QAction *selectAction, *insertRectAction, *insertEllipseAction;
-    QAction *insertLineAction, *insertArrowAction, *insertTextAction;
+    QAction *insertLineAction, *insertArrowAction = nullptr, *insertDotAction, *insertTextAction;
     QAction *aboutAction;
 
     QActionGroup *toolGroup;

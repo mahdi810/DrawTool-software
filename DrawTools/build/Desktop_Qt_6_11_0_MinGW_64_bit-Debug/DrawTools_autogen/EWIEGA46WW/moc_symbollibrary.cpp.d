@@ -1,6 +1,7 @@
 C:/HOME/HochschuleBremerhaven2025/qt\ programs/DrawTools/build/Desktop_Qt_6_11_0_MinGW_64_bit-Debug/DrawTools_autogen/EWIEGA46WW/moc_symbollibrary.cpp: C:/HOME/HochschuleBremerhaven2025/qt\ programs/DrawTools/symbollibrary.h \
   C:/HOME/HochschuleBremerhaven2025/qt\ programs/DrawTools/build/Desktop_Qt_6_11_0_MinGW_64_bit-Debug/DrawTools_autogen/moc_predefs.h \
   C:/Qt/6.11.0/mingw_64/include/QtCore/QList \
+  C:/Qt/6.11.0/mingw_64/include/QtCore/QPointF \
   C:/Qt/6.11.0/mingw_64/include/QtCore/QString \
   C:/Qt/6.11.0/mingw_64/include/QtCore/q17memory.h \
   C:/Qt/6.11.0/mingw_64/include/QtCore/q20bit.h \

@@ -18,8 +18,16 @@ public:
         if (!m_scene->items().contains(m_item))
             delete m_item;
     }
-    void redo() override { m_scene->addItem(m_item); }
-    void undo() override { m_scene->removeItem(m_item); }
+    void redo() override
+    {
+        if (!m_scene->items().contains(m_item))
+            m_scene->addItem(m_item);
+    }
+    void undo() override
+    {
+        if (m_scene->items().contains(m_item))
+            m_scene->removeItem(m_item);
+    }
 
 private:
     QGraphicsScene *m_scene;

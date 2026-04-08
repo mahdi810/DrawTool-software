@@ -7,7 +7,7 @@ set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTOUIC ON)
 set(CMAKE_AUTORCC ON)
 
-find_package(Qt6 REQUIRED COMPONENTS Widgets Svg)
+find_package(Qt6 REQUIRED COMPONENTS Widgets Svg Xml)
 
 add_executable(DrawTools
     main.cpp
@@ -24,4 +24,4 @@ add_executable(DrawTools
     commands.h
 )
 
-target_link_libraries(DrawTools PRIVATE Qt6::Widgets Qt6::Svg)
+target_link_libraries(DrawTools PRIVATE Qt6::Widgets Qt6::Svg Qt6::Xml)

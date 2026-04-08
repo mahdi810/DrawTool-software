@@ -8,6 +8,8 @@
 #include <QFont>
 #include <QColor>
 #include <QPixmap>
+#include <QPointF>
+#include <QList>
 #include <QVector>
 #include "arrowitem.h"
 
@@ -22,6 +24,7 @@ public:
         InsertEllipseMode,
         InsertLineMode,
         InsertArrowMode,
+        InsertJunctionDotMode,
         InsertTextMode,
         InsertSymbolMode
     };
@@ -47,7 +50,9 @@ public:
     void setCurrentTextColor  (const QColor &c) { m_textColor = c; }
     void setCurrentStartArrow (ArrowItem::ArrowType t) { m_startArrow = t; }
     void setCurrentEndArrow   (ArrowItem::ArrowType t) { m_endArrow   = t; }
-    void setCurrentSymbol     (const QPixmap &px)      { m_symbol = px; }
+    void setCurrentSymbol(const QPixmap &px,
+                          const QList<QPointF> &portsNormalized = {},
+                          const QString &symbolName = QString());
 
     QPen   currentPen()   const { return m_pen; }
     QBrush currentBrush() const { return m_brush; }
@@ -69,6 +74,7 @@ signals:
 
 protected:
     void drawBackground(QPainter *painter, const QRectF &rect) override;
+    void mouseDoubleClickEvent(QGraphicsSceneMouseEvent *event) override;
     void mousePressEvent      (QGraphicsSceneMouseEvent *event) override;
     void mouseMoveEvent       (QGraphicsSceneMouseEvent *event) override;
     void mouseReleaseEvent    (QGraphicsSceneMouseEvent *event) override;
@@ -76,6 +82,9 @@ protected:
 
 private:
     QPointF snapToGrid(const QPointF &pt) const;
+    QPointF snapToConnectionPoint(const QPointF &pt) const;
+    QPointF constrainOrthogonal(const QPointF &from, const QPointF &to) const;
+    QList<QGraphicsItem *> makeAutoJunctionsForWire(const QLineF &wireLine, QGraphicsItem *excludeItem) const;
 
     QUndoStack           *m_undoStack;
     Mode                  m_mode       = SelectMode;
@@ -91,8 +100,14 @@ private:
     ArrowItem::ArrowType  m_startArrow = ArrowItem::NoArrow;
     ArrowItem::ArrowType  m_endArrow   = ArrowItem::FilledArrow;
     QPixmap               m_symbol;
+    QList<QPointF>        m_symbolPortsNormalized;
+    QString               m_symbolName;
 
     QGraphicsItem        *m_tempItem   = nullptr;
+
+    bool                  m_rightDupDragging = false;
+    QGraphicsItem        *m_rightDupItem     = nullptr;
+    QPointF               m_rightDupOffset;
 
     QVector<QGraphicsItem*> m_clipboard;
     QPointF                 m_pasteOffset;

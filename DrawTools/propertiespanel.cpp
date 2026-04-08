@@ -35,8 +35,8 @@ PropertiesPanel::PropertiesPanel(DiagramScene *scene, QWidget *parent)
     : QDockWidget("Properties", parent)
     , m_scene(scene)
 {
-    setMinimumWidth(215);
-    setMaximumWidth(265);
+    setMinimumWidth(185);
+    setMaximumWidth(225);
     buildUI();
 
     connect(m_scene, &DiagramScene::selectionChanged,
@@ -56,7 +56,8 @@ void PropertiesPanel::buildUI()
 
     QWidget     *container = new QWidget;
     QVBoxLayout *lay       = new QVBoxLayout(container);
-    lay->setContentsMargins(4, 4, 4, 4);
+    lay->setContentsMargins(2, 2, 2, 2);
+    lay->setSpacing(2);
     lay->addWidget(m_stack);
     lay->addStretch();
     setWidget(container);
@@ -67,7 +68,8 @@ QWidget *PropertiesPanel::buildSelectPage()
 {
     QWidget     *w   = new QWidget;
     QVBoxLayout *lay = new QVBoxLayout(w);
-    lay->setContentsMargins(8, 16, 8, 8);
+    lay->setContentsMargins(6, 10, 6, 6);
+    lay->setSpacing(4);
     QLabel *lbl = new QLabel("Select an item or\nchoose a draw tool\nto see properties.");
     lbl->setAlignment(Qt::AlignCenter);
     lbl->setStyleSheet("color:#999; font-style:italic; font-size:11px;");
@@ -80,14 +82,14 @@ QWidget *PropertiesPanel::buildShapePage()
 {
     QWidget     *w    = new QWidget;
     QFormLayout *form = new QFormLayout(w);
-    form->setContentsMargins(8, 8, 8, 8);
-    form->setSpacing(6);
+    form->setContentsMargins(6, 6, 6, 6);
+    form->setSpacing(4);
 
     // Stroke
     form->addRow(new QLabel("<b>Stroke</b>"));
 
     m_penColorBtn = new QPushButton;
-    m_penColorBtn->setFixedHeight(22);
+    m_penColorBtn->setFixedHeight(20);
     setButtonColor(m_penColorBtn, Qt::black);
     connect(m_penColorBtn, &QPushButton::clicked, this, &PropertiesPanel::choosePenColor);
     form->addRow("Color:", m_penColorBtn);
@@ -146,7 +148,7 @@ QWidget *PropertiesPanel::buildShapePage()
     fillForm->addRow(m_fillCheck);
 
     m_fillColorBtn = new QPushButton;
-    m_fillColorBtn->setFixedHeight(22);
+    m_fillColorBtn->setFixedHeight(20);
     setButtonColor(m_fillColorBtn, QColor(220, 235, 255));
     connect(m_fillColorBtn, &QPushButton::clicked, this, &PropertiesPanel::chooseFillColor);
     fillForm->addRow("Color:", m_fillColorBtn);
@@ -177,13 +179,13 @@ QWidget *PropertiesPanel::buildArrowPage()
 {
     QWidget     *w    = new QWidget;
     QFormLayout *form = new QFormLayout(w);
-    form->setContentsMargins(8, 8, 8, 8);
-    form->setSpacing(6);
+    form->setContentsMargins(6, 6, 6, 6);
+    form->setSpacing(4);
 
     form->addRow(new QLabel("<b>Line</b>"));
 
     m_arrowPenColorBtn = new QPushButton;
-    m_arrowPenColorBtn->setFixedHeight(22);
+    m_arrowPenColorBtn->setFixedHeight(20);
     setButtonColor(m_arrowPenColorBtn, Qt::black);
     connect(m_arrowPenColorBtn, &QPushButton::clicked, this, [this]() {
         QColor c = QColorDialog::getColor(buttonColor(m_arrowPenColorBtn), this, "Line Color");
@@ -228,7 +230,7 @@ QWidget *PropertiesPanel::buildArrowPage()
     m_endArrowCombo->addItem("None",   ArrowItem::NoArrow);
     m_endArrowCombo->addItem("Open",   ArrowItem::OpenArrow);
     m_endArrowCombo->addItem("Filled", ArrowItem::FilledArrow);
-    m_endArrowCombo->setCurrentIndex(2); // default: filled at end
+        m_endArrowCombo->setCurrentIndex(2); // default: filled at end
     connect(m_endArrowCombo, QOverload<int>::of(&QComboBox::currentIndexChanged),
             this, &PropertiesPanel::onShapePropertyChanged);
     form->addRow("End:", m_endArrowCombo);
@@ -241,8 +243,8 @@ QWidget *PropertiesPanel::buildTextPage()
 {
     QWidget     *w    = new QWidget;
     QFormLayout *form = new QFormLayout(w);
-    form->setContentsMargins(8, 8, 8, 8);
-    form->setSpacing(6);
+    form->setContentsMargins(6, 6, 6, 6);
+    form->setSpacing(4);
 
     form->addRow(new QLabel("<b>Text</b>"));
 
@@ -267,7 +269,7 @@ QWidget *PropertiesPanel::buildTextPage()
 
     for (QToolButton *b : {m_boldBtn, m_italicBtn, m_underlineBtn}) {
         b->setCheckable(true);
-        b->setFixedSize(28, 28);
+        b->setFixedSize(24, 24);
     }
     m_boldBtn->setStyleSheet("font-weight:bold;");
     m_italicBtn->setStyleSheet("font-style:italic;");
@@ -287,7 +289,7 @@ QWidget *PropertiesPanel::buildTextPage()
     form->addRow("Style:", styleW);
 
     m_textColorBtn = new QPushButton;
-    m_textColorBtn->setFixedHeight(22);
+    m_textColorBtn->setFixedHeight(20);
     setButtonColor(m_textColorBtn, Qt::black);
     connect(m_textColorBtn, &QPushButton::clicked, this, &PropertiesPanel::chooseTextColor);
     form->addRow("Color:", m_textColorBtn);
@@ -351,8 +353,6 @@ void PropertiesPanel::onShapePropertyChanged()
         fc.setAlpha(m_fillAlphaSlider->value());
         brush = QBrush(fc);
     }
-    m_scene->setCurrentPen(pen);
-    m_scene->setCurrentBrush(brush);
 
     // Arrow pen
     QPen arrowPen;
@@ -360,6 +360,9 @@ void PropertiesPanel::onShapePropertyChanged()
     arrowPen.setWidthF  (m_arrowWidthSpin->value());
     arrowPen.setStyle   (static_cast<Qt::PenStyle>(m_arrowPenStyleCombo->currentData().toInt()));
     arrowPen.setCapStyle(Qt::RoundCap);
+
+    m_scene->setCurrentPen(pen);
+    m_scene->setCurrentBrush(brush);
 
     auto startArrow = static_cast<ArrowItem::ArrowType>(m_startArrowCombo->currentData().toInt());
     auto endArrow   = static_cast<ArrowItem::ArrowType>(m_endArrowCombo->currentData().toInt());

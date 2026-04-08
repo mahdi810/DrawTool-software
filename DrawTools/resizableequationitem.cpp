@@ -4,11 +4,95 @@
 #include <QPainter>
 #include <QStyleOptionGraphicsItem>
 #include <QSvgRenderer>
+#include <QDomDocument>
+
+static QString styleValue(const QString &style, const QString &key)
+{
+    const QStringList parts = style.split(';', Qt::SkipEmptyParts);
+    for (const QString &part : parts) {
+        const int sep = part.indexOf(':');
+        if (sep <= 0) continue;
+        const QString k = part.left(sep).trimmed();
+        if (!k.compare(key, Qt::CaseInsensitive)) {
+            return part.mid(sep + 1).trimmed();
+        }
+    }
+    return QString();
+}
+
+static QString setStyleValue(const QString &style, const QString &key, const QString &value)
+{
+    QStringList parts = style.split(';', Qt::SkipEmptyParts);
+    bool replaced = false;
+    for (QString &part : parts) {
+        const int sep = part.indexOf(':');
+        if (sep <= 0) continue;
+        const QString k = part.left(sep).trimmed();
+        if (!k.compare(key, Qt::CaseInsensitive)) {
+            part = k + ":" + value;
+            replaced = true;
+            break;
+        }
+    }
+    if (!replaced) {
+        parts.append(key + ":" + value);
+    }
+    return parts.join(';');
+}
+
+static QByteArray sanitizeEquationSvgForRender(const QByteArray &rawSvg)
+{
+    QDomDocument doc;
+    const auto parseResult = doc.setContent(rawSvg);
+    if (!parseResult) return rawSvg;
+
+    bool changed = false;
+    QList<QDomElement> stack;
+    const QDomElement root = doc.documentElement();
+    if (root.isNull()) return rawSvg;
+    stack.append(root);
+
+    while (!stack.isEmpty()) {
+        QDomElement el = stack.takeLast();
+
+        for (QDomNode n = el.firstChild(); !n.isNull(); n = n.nextSibling()) {
+            if (n.isElement()) stack.append(n.toElement());
+        }
+
+        QString fill = el.attribute("fill").trimmed();
+        QString stroke = el.attribute("stroke").trimmed();
+        const QString style = el.attribute("style").trimmed();
+
+        if (!style.isEmpty()) {
+            if (fill.isEmpty()) fill = styleValue(style, "fill");
+            if (stroke.isEmpty()) stroke = styleValue(style, "stroke");
+        }
+
+        const bool hasFill = !fill.isEmpty() && fill.compare("none", Qt::CaseInsensitive) != 0;
+        const bool hasStroke = !stroke.isEmpty() && stroke.compare("none", Qt::CaseInsensitive) != 0;
+
+        // Many TeX SVGs carry both fill and stroke on glyph paths; PDF backends can render these too heavy.
+        if (hasFill && hasStroke) {
+            el.setAttribute("stroke", "none");
+            if (el.hasAttribute("stroke-width")) {
+                el.setAttribute("stroke-width", "0");
+            }
+            if (!style.isEmpty()) {
+                QString newStyle = setStyleValue(style, "stroke", "none");
+                newStyle = setStyleValue(newStyle, "stroke-width", "0");
+                el.setAttribute("style", newStyle);
+            }
+            changed = true;
+        }
+    }
+
+    return changed ? doc.toByteArray(2) : rawSvg;
+}
 
 ResizableEquationItem::ResizableEquationItem(const QByteArray &svgData, QGraphicsItem *parent)
     : QGraphicsItem(parent)
     , m_svgRenderer(new QSvgRenderer())
-    , m_svgData(svgData)
+    , m_svgData(sanitizeEquationSvgForRender(svgData))
 {
     m_svgRenderer->load(m_svgData);
     QSize s = m_svgRenderer->defaultSize();
@@ -219,4 +303,9 @@ QByteArray ResizableEquationItem::svgData() const
 QPixmap ResizableEquationItem::fallbackPixmap() const
 {
     return m_fallbackPixmap;
+}
+
+QSizeF ResizableEquationItem::baseSize() const
+{
+    return m_baseSize;
 }

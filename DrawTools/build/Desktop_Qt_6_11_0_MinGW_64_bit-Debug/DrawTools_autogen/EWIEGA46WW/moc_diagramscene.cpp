@@ -51,6 +51,7 @@ template <> constexpr inline auto DiagramScene::qt_create_metaobjectdata<qt_meta
         "InsertEllipseMode",
         "InsertLineMode",
         "InsertArrowMode",
+        "InsertJunctionDotMode",
         "InsertTextMode",
         "InsertSymbolMode"
     };
@@ -75,8 +76,9 @@ template <> constexpr inline auto DiagramScene::qt_create_metaobjectdata<qt_meta
             {   10, Mode::InsertEllipseMode },
             {   11, Mode::InsertLineMode },
             {   12, Mode::InsertArrowMode },
-            {   13, Mode::InsertTextMode },
-            {   14, Mode::InsertSymbolMode },
+            {   13, Mode::InsertJunctionDotMode },
+            {   14, Mode::InsertTextMode },
+            {   15, Mode::InsertSymbolMode },
         }),
     };
     return QtMocHelpers::metaObjectData<DiagramScene, qt_meta_tag_ZN12DiagramSceneE_t>(QMC::MetaObjectFlag{}, qt_stringData,

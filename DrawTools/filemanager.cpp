@@ -10,12 +10,64 @@
 #include <QJsonObject>
 #include <QGraphicsEllipseItem>
 #include <QGraphicsLineItem>
+#include <QGraphicsSimpleTextItem>
 #include <QGraphicsTextItem>
 #include <QGraphicsPixmapItem>
 #include <QByteArray>
 #include <QBuffer>
 #include <QFont>
 #include <QColor>
+
+namespace {
+constexpr int kSymbolComponentRole = 1001;
+constexpr int kSymbolPortsRole = 1002;
+constexpr int kSymbolRefRole = 1003;
+constexpr int kSymbolValueRole = 1004;
+constexpr int kSymbolLabelRole = 1005;
+
+void updateComponentLabels(QGraphicsPixmapItem *item)
+{
+    if (!item) return;
+
+    const QString ref = item->data(kSymbolRefRole).toString();
+    const QString val = item->data(kSymbolValueRole).toString();
+
+    QGraphicsSimpleTextItem *refText = nullptr;
+    QGraphicsSimpleTextItem *valText = nullptr;
+    for (QGraphicsItem *c : item->childItems()) {
+        if (auto *st = qgraphicsitem_cast<QGraphicsSimpleTextItem *>(c)) {
+            const QString role = st->data(kSymbolLabelRole).toString();
+            if (role == QStringLiteral("ref")) refText = st;
+            else if (role == QStringLiteral("val")) valText = st;
+        }
+    }
+
+    if (!refText) {
+        refText = new QGraphicsSimpleTextItem(item);
+        refText->setData(kSymbolLabelRole, QStringLiteral("ref"));
+    }
+    if (!valText) {
+        valText = new QGraphicsSimpleTextItem(item);
+        valText->setData(kSymbolLabelRole, QStringLiteral("val"));
+    }
+
+    QFont f("Consolas", 7);
+    refText->setFont(f);
+    valText->setFont(f);
+    refText->setBrush(QBrush(QColor(40, 40, 120)));
+    valText->setBrush(QBrush(QColor(80, 80, 80)));
+    refText->setText(ref);
+    valText->setText(val);
+
+    const QSizeF logicalSize = item->pixmap().deviceIndependentSize();
+    const qreal w = logicalSize.width()  > 0.0 ? logicalSize.width()  : static_cast<qreal>(item->pixmap().width());
+    const qreal h = logicalSize.height() > 0.0 ? logicalSize.height() : static_cast<qreal>(item->pixmap().height());
+    const QRectF refBr = refText->boundingRect();
+    const QRectF valBr = valText->boundingRect();
+    refText->setPos((w - refBr.width()) * 0.5, -refBr.height() - 3.0);
+    valText->setPos((w - valBr.width()) * 0.5, h + 2.0);
+}
+}
 
 // ──────────────────────────────────────────────────
 //  Helpers
@@ -151,13 +203,20 @@ QJsonObject FileManager::itemToJson(QGraphicsItem *item)
 
     case QGraphicsEllipseItem::Type: {
         auto *ei  = static_cast<QGraphicsEllipseItem *>(item);
-        obj["type"]  = "ellipse";
-        obj["rx"]    = ei->rect().x();
-        obj["ry"]    = ei->rect().y();
-        obj["rw"]    = ei->rect().width();
-        obj["rh"]    = ei->rect().height();
-        obj["pen"]   = penToJson(ei->pen());
-        obj["brush"] = brushToJson(ei->brush());
+        if (ei->data(1).toString() == QStringLiteral("junctionDot")) {
+            obj["type"] = "junction_dot";
+            obj["d"]    = ei->rect().width();
+            obj["pen"]  = penToJson(ei->pen());
+            obj["brush"] = brushToJson(ei->brush());
+        } else {
+            obj["type"]  = "ellipse";
+            obj["rx"]    = ei->rect().x();
+            obj["ry"]    = ei->rect().y();
+            obj["rw"]    = ei->rect().width();
+            obj["rh"]    = ei->rect().height();
+            obj["pen"]   = penToJson(ei->pen());
+            obj["brush"] = brushToJson(ei->brush());
+        }
         break;
     }
 
@@ -195,6 +254,19 @@ QJsonObject FileManager::itemToJson(QGraphicsItem *item)
         obj["pixmap"] = pixmapToBase64(pi->pixmap());
         if (pi->data(0).isValid())
             obj["latex"] = pi->data(0).toString();
+
+        if (pi->data(kSymbolComponentRole).toBool()) {
+            obj["isComponent"] = true;
+            obj["componentRef"] = pi->data(kSymbolRefRole).toString();
+            obj["componentValue"] = pi->data(kSymbolValueRole).toString();
+            QJsonArray ports;
+            const QVariantList localPorts = pi->data(kSymbolPortsRole).toList();
+            for (const QVariant &v : localPorts) {
+                const QPointF p = v.toPointF();
+                ports.append(QJsonObject{{"x", p.x()}, {"y", p.y()}});
+            }
+            obj["ports"] = ports;
+        }
         break;
     }
 
@@ -242,6 +314,14 @@ QGraphicsItem *FileManager::itemFromJson(const QJsonObject &o)
         eq->setScale(o["scale"].toDouble(1.0));
         item = eq;
 
+    } else if (type == "junction_dot") {
+        const qreal d = o["d"].toDouble(8.0);
+        auto *ei = new QGraphicsEllipseItem(QRectF(-d / 2.0, -d / 2.0, d, d));
+        ei->setPen  (penFromJson  (o["pen"].toObject()));
+        ei->setBrush(brushFromJson(o["brush"].toObject()));
+        ei->setData(1, QStringLiteral("junctionDot"));
+        item = ei;
+
     } else if (type == "ellipse") {
         QRectF r(o["rx"].toDouble(), o["ry"].toDouble(),
                  o["rw"].toDouble(), o["rh"].toDouble());
@@ -287,6 +367,20 @@ QGraphicsItem *FileManager::itemFromJson(const QJsonObject &o)
         if (px.isNull()) return nullptr;
         auto *pi = new ResizablePixmapItem(px);
         if (o.contains("latex")) pi->setData(0, o["latex"].toString());
+
+        if (o["isComponent"].toBool(false)) {
+            QVariantList ports;
+            const QJsonArray pa = o["ports"].toArray();
+            for (const auto &pv : pa) {
+                const QJsonObject po = pv.toObject();
+                ports << QPointF(po["x"].toDouble(), po["y"].toDouble());
+            }
+            pi->setData(kSymbolComponentRole, true);
+            pi->setData(kSymbolPortsRole, ports);
+            pi->setData(kSymbolRefRole, o["componentRef"].toString("U?"));
+            pi->setData(kSymbolValueRole, o["componentValue"].toString("COMP"));
+            updateComponentLabels(pi);
+        }
         item = pi;
     }
 

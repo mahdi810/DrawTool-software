@@ -25,6 +25,7 @@ public:
     bool hasSvgData() const;
     QByteArray svgData() const;
     QPixmap fallbackPixmap() const;
+    QSizeF baseSize() const;
 
 protected:
     void hoverMoveEvent(QGraphicsSceneHoverEvent *event) override;

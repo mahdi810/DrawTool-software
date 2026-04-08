@@ -3,6 +3,11 @@
 #include <QStyleOptionGraphicsItem>
 #include <cmath>
 
+static bool isFinitePoint(const QPointF &p)
+{
+    return std::isfinite(p.x()) && std::isfinite(p.y());
+}
+
 ArrowItem::ArrowItem(const QLineF &line, QGraphicsItem *parent)
     : QGraphicsLineItem(line, parent)
 {
@@ -15,6 +20,10 @@ ArrowItem::ArrowItem(const QLineF &line, QGraphicsItem *parent)
 
 QRectF ArrowItem::boundingRect() const
 {
+    const QLineF ln = line();
+    if (!isFinitePoint(ln.p1()) || !isFinitePoint(ln.p2())) {
+        return QRectF();
+    }
     return QGraphicsLineItem::boundingRect().adjusted(
         -ARROW_SIZE, -ARROW_SIZE, ARROW_SIZE, ARROW_SIZE);
 }
@@ -30,8 +39,10 @@ void ArrowItem::drawArrowHead(QPainter *painter, const QPointF &tip,
                               const QPointF &tail, ArrowType t) const
 {
     if (t == NoArrow) return;
+    if (!isFinitePoint(tip) || !isFinitePoint(tail)) return;
 
     QLineF ln(tail, tip);
+    if (ln.length() < 1e-6) return;
     double angle = std::atan2(-ln.dy(), ln.dx());
 
     double a1 = angle + M_PI / 6.0;
@@ -59,12 +70,15 @@ void ArrowItem::paint(QPainter *painter,
     Q_UNUSED(option)
     Q_UNUSED(widget)
 
+    const QLineF ln = line();
+    if (!isFinitePoint(ln.p1()) || !isFinitePoint(ln.p2())) return;
+
     painter->setRenderHint(QPainter::Antialiasing);
     painter->setPen(pen());
-    painter->drawLine(line());
+    painter->drawLine(ln);
 
-    drawArrowHead(painter, line().p2(), line().p1(), m_end);
-    drawArrowHead(painter, line().p1(), line().p2(), m_start);
+    drawArrowHead(painter, ln.p2(), ln.p1(), m_end);
+    drawArrowHead(painter, ln.p1(), ln.p2(), m_start);
 
     if (isSelected()) {
         QPen selPen(Qt::blue, 1.0, Qt::DashLine);
